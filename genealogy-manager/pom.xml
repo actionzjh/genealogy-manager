@@ -67,7 +67,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Hibernate Community Dialects - SQLite 方言支持 --><dependency><groupId>org.hibernate.orm</groupId><artifactId>hibernate-community-dialects</artifactId></dependency>
+        <!-- 第三方 SQLite 方言 --><dependency><groupId>com.github.gwenn</groupId><artifactId>sqlite-dialect</artifactId><version>0.1.4</version></dependency>
     </dependencies>
 
     <build>
