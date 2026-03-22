@@ -1,0 +1,104 @@
+{
+  "id": "root",
+  "title": "婺源甲道张氏",
+  "status": "done",
+  "children": [
+    {
+      "id": "gen1",
+      "title": "一世",
+      "status": "done",
+      "children": [
+        {
+          "id": "zhang-che",
+          "title": "张彻",
+          "status": "done",
+          "children": [
+            {
+              "id": "zhangs",
+              "title": "甲道本支",
+              "status": "done",
+              "children": [
+                {
+                  "id": "zhang-jing",
+                  "title": "张敬",
+                  "status": "done",
+                  "children": []
+                },
+                {
+                  "id": "zhang-lu",
+                  "title": "张卢",
+                  "status": "done",
+                  "children": [
+                    {
+                      "id": "zhang-zhijin",
+                      "title": "张知近",
+                      "status": "done",
+                      "children": []
+                    },
+                    {
+                      "id": "zhang-zhiyuan",
+                      "title": "张知远",
+                      "status": "done",
+                      "children": []
+                    },
+                    {
+                      "id": "zhang-zhisheng",
+                      "title": "张知盛",
+                      "status": "done",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "zhang-xiu",
+                  "title": "张休",
+                  "status": "done",
+                  "children": [
+                    {
+                      "id": "zhang-gonghou",
+                      "title": "张公厚",
+                      "status": "done",
+                      "children": []
+                    },
+                    {
+                      "id": "zhang-gongman",
+                      "title": "张公满",
+                      "status": "done",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "zhangs-huining",
+              "title": "休宁杭溪支",
+              "status": "done",
+              "children": [
+                {
+                  "id": "zhang-heng",
+                  "title": "张衡",
+                  "status": "done",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "zhangs-fudong",
+              "title": "浮东梅岭支",
+              "status": "done",
+              "children": [
+                {
+                  "id": "zhang-cong",
+                  "title": "张從",
+                  "status": "done",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
