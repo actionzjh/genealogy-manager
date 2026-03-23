@@ -5,6 +5,7 @@ import com.genealogy.service.FamilyService;
 import com.genealogy.util.GedcomExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class ExportController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_PLAIN);
-            headers.setContentDispositionFormits("attachment", title + ".ged");
+            headers.setContentDisposition(ContentDisposition.attachment().filename(title + ".ged").build());
             headers.setContentLength(bytes.length);
 
             return ResponseEntity.ok()

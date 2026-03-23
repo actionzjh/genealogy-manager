@@ -28,22 +28,41 @@ git clone https://github.com/actionzjh/genealogy-manager.git
 cd genealogy-manager
 ```
 
-### 2. 编译运行
+### 2. 运行项目
 
 ```bash
-mvn spring-boot:run
+run-app.cmd
 ```
 
-或者打包后运行：
+这个脚本会：
+
+- 使用本机 JDK 17 启动项目
+- 如果 `target/genealogy-manager-1.0.0.jar` 不存在，先自动构建
+- 直接运行打包后的 Spring Boot 应用
+
+如果你希望手动构建后再运行，也可以使用：
 
 ```bash
-mvn clean package
+.\.tools\apache-maven-3.9.5\bin\mvn.cmd -s .m2\settings.xml package -DskipTests
 java -jar target/genealogy-manager-1.0.0.jar
 ```
 
-### 3. 访问
+如果你希望先验证构建是否正常，可以使用：
 
-打开浏览器访问: http://localhost:8080
+```bash
+.\.tools\apache-maven-3.9.5\bin\mvn.cmd -s .m2\settings.xml test
+```
+
+### 3. 本地运行目录说明
+
+- `run-app.cmd`：一键启动脚本，推荐本地开发时直接使用
+- `.m2/settings.xml`：项目内 Maven 配置，固定本地仓库位置
+- `.m2/repository/`：本机依赖缓存目录，体积较大，默认不提交
+- `.tools/`：本地 Maven 工具目录，仅用于当前机器构建和启动，默认不提交
+
+### 4. 访问
+
+打开浏览器访问: http://localhost:8081
 
 ## API 接口
 

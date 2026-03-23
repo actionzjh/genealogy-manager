@@ -9,6 +9,10 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
+.m2/repository/
+.m2/wrapper/
+.tools/
+!.m2/settings.xml
 
 # IDE
 .idea/
