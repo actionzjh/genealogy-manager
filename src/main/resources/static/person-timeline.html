@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家族时间线 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .timeline-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .timeline-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #e0e0e0;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -53px;
+            top: 18px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 4px solid #fff;
+            box-shadow: 0 0 0 3px #667eea;
+        }
+        .timeline-generation {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .timeline-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .timeline-years {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .timeline-bio {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .timeline-generation-1::before {
+            background: #2ecc71;
+            box-shadow: 0 0 0 3px #2ecc71;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+        .stats-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .generation-group h3 {
+            font-size: 16px;
+            color: #333;
+            margin: 20px 0 15px 0;
+            padding-left: 40px;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            .form-row .btn {
+                width: 100%;
+            }
+            .timeline {
+                padding-left: 30px;
+            }
+            .timeline-item::before {
+                left: -43px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 家族时间线</h1>
+        <p>按世代排序展示家族成员生平时间线</p>
+    </div>
+
+    <div class="container">
+        <div class="form-card">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>家谱ID</label>
+                    <input type="number" id="genealogyId" placeholder="输入要查看的家谱ID">
+                </div>
+                <button class="btn" onclick="loadTimeline()">加载时间线</button>
+            </div>
+        </div>
+
+        <div id="resultContainer" style="display: none;">
+            <div class="timeline-container">
+                <div class="timeline-title">
+                    <span id="title"></span>
+                </div>
+                <div id="statsBox" class="stats-box">
+                    <!-- 统计 -->
+                </div>
+                <div id="timelineContent">
+                    <!-- 时间线内容 -->
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            请输入家谱ID，点击加载
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        function loadTimeline() {
+            const genealogyId = document.getElementById('genealogyId').value;
+            if (!genealogyId) {
+                alert('请输入家谱ID');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').textContent = '加载中...';
+            document.getElementById('resultContainer').style.display = 'none';
+
+            fetch(`/api/person/genealogy/${genealogyId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 0) {
+                    renderTimeline(data.data, genealogyId);
+                } else {
+                    alert('加载失败: ' + (data.message || '未知错误'));
+                }
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('resultContainer').style.display = 'block';
+            })
+            .catch(err => {
+                console.error(err);
+                alert('网络错误');
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        function renderTimeline(persons, genealogyId) {
+            // 按世代分组
+            const byGeneration = {};
+            let total = 0;
+            let maxGen = 0;
+            let male = 0;
+            let female = 0;
+
+            persons.forEach(p => {
+                let gen = p.generation || 0;
+                if (gen <= 0) gen = 1;
+                if (!byGeneration[gen]) {
+                    byGeneration[gen] = [];
+                }
+                byGeneration[gen].push(p);
+                total++;
+                if (gen > maxGen) maxGen = gen;
+                if (p.gender === 'M') male++;
+                else if (p.gender === 'F') female++;
+            });
+
+            // 更新统计
+            document.getElementById('title').textContent = `家族时间线 - 共 ${total} 人`;
+            document.getElementById('statsBox').innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${total}</div>
+                    <div class="stat-label">总人数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${maxGen}</div>
+                    <div class="stat-label">最大世代</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${male}</div>
+                    <div class="stat-label">男性</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${female}</div>
+                    <div class="stat-label">女性</div>
+                </div>
+            `;
+
+            // 按世代从小到大排序
+            const gens = Object.keys(byGeneration).map(Number).sort((a, b) => a - b);
+
+            let html = '';
+            gens.forEach(gen => {
+                const personsInGen = byGeneration[gen];
+                html += `<div class="generation-group"><h3>第 ${gen} 世 (${personsInGen.length} 人)</h3><div class="timeline">`;
+
+                personsInGen.forEach(p => {
+                    let years = '';
+                    if (p.birthYear) {
+                        years += p.birthYear;
+                        if (p.deathYear) {
+                            years += ' - ' + p.deathYear;
+                        }
+                    }
+
+                    let bio = p.biography || p.achievements || '';
+                    if (bio && bio.length > 100) {
+                        bio = bio.substring(0, 100) + '...';
+                    }
+
+                    html += `
+                        <div class="timeline-item ${gen === 1 ? 'timeline-generation-1' : ''}">
+                            <span class="timeline-generation">${gen} 世</span>
+                            <div class="timeline-name">${escapeHtml(p.name)}</div>
+                            ${years ? `<div class="timeline-years">${years}</div>` : ''}
+                            ${bio ? `<div class="timeline-bio">${escapeHtml(bio)}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            });
+
+            if (total === 0) {
+                html = `<div class="empty-state"><p>该家谱还没有人物数据</p></div>`;
+            }
+
+            document.getElementById('timelineContent').innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 自动加载
+        const genealogyId = new URLSearchParams(window.location.search).get('genealogyId');
+        if (genealogyId) {
+            document.getElementById('genealogyId').value = genealogyId;
+            loadTimeline();
+        }
+    </script>
+</body>
+</html>

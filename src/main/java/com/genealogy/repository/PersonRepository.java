@@ -35,13 +35,38 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
     long countByGeneration(Integer generation);
     
     /**
-     * 获取最大世代数
+     * 获取最大世代数（某个家谱）
      */
-    @Query("SELECT MAX(p.generation) FROM Person p")
-    Integer findMaxGeneration();
+    @Query("SELECT MAX(p.generation) FROM Person p WHERE p.genealogyId = :genealogyId")
+    Integer findMaxGeneration(@Param("genealogyId") Long genealogyId);
     
     /**
      * 根据性别统计
      */
     long countByGender(String gender);
+    
+    /**
+     * 根据家谱ID查找所有人
+     */
+    List<Person> findByGenealogyId(Long genealogyId);
+    
+    /**
+     * 根据用户ID查找
+     */
+    List<Person> findByUserId(Long userId);
+    
+    /**
+     * 根据家谱ID和用户ID查找
+     */
+    List<Person> findByGenealogyIdAndUserId(Long genealogyId, Long userId);
+    
+    /**
+     * 统计家谱人数
+     */
+    long countByGenealogyId(Long genealogyId);
+    
+    /**
+     * 用户范围内姓名搜索
+     */
+    List<Person> findByUserIdAndNameContainingIgnoreCase(Long userId, String name);
 }

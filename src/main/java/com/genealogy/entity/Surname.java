@@ -5,55 +5,63 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 家谱实体 - 一个家谱对应一个家族
+ * 姓氏百科实体 - 存储姓氏起源、郡望堂号等信息
  */
 @Data
 @Entity
-@Table(name = "genealogy")
-public class Genealogy {
-    
+@Table(name = "surname")
+public class Surname {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 家谱名称
+     * 姓氏
      */
-    @Column(length = 200, nullable = false)
+    @Column(length = 50, nullable = false, unique = true)
     private String name;
 
     /**
-     * 姓氏
+     * 姓氏拼音
      */
     @Column(length = 100)
-    private String surname;
+    private String pinyin;
 
     /**
-     * 始祖ID
+     * 起源
      */
-    private Long founderId;
+    @Column(length = 5000)
+    private String origin;
 
     /**
-     * 家谱描述
+     * 郡望
      */
     @Column(length = 2000)
-    private String description;
+    private String junwang;
 
     /**
-     * 起源地
+     * 堂号
      */
-    @Column(length = 200)
-    private String originPlace;
+    @Column(length = 2000)
+    private String tanghao;
 
     /**
-     * 总人数
+     * 姓氏名人
      */
-    private Integer totalPeople;
+    @Column(length = 3000)
+    private String famousPeople;
 
     /**
-     * 最大世代数
+     * 迁徙分布
      */
-    private Integer maxGeneration;
+    @Column(length = 2000)
+    private String migration;
+
+    /**
+     * 家谱数量
+     */
+    private Integer genealogyCount = 0;
 
     /**
      * 创建时间
@@ -66,15 +74,13 @@ public class Genealogy {
      */
     private LocalDateTime updatedAt;
 
-    /**
-     * 所属用户ID
-     */
-    private Long userId;
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+        if (genealogyCount == null) {
+            genealogyCount = 0;
+        }
     }
 
     @PreUpdate

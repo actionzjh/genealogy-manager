@@ -188,4 +188,25 @@ public class PersonController {
         result.put("femaleCount", personService.countByGender("F"));
         return ResponseEntity.ok(result);
     }
+
+    /**
+     * 获取某个家谱的所有人（用于可视化）
+     */
+    @GetMapping("/genealogy/{genealogyId}")
+    public ResponseEntity<Map<String, Object>> getByGenealogy(@PathVariable Long genealogyId, Authentication authentication) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (authentication == null || authentication.getPrincipal() == null) {
+            result.put("code", 401);
+            result.put("message", "请先登录");
+            return ResponseEntity.status(401).body(result);
+        }
+        Long userId = (Long) authentication.getPrincipal();
+
+        List<Person> list = personService.findByGenealogyIdAndUserId(genealogyId, userId);
+        result.put("code", 0);
+        result.put("data", list);
+        result.put("total", list.size());
+        return ResponseEntity.ok(result);
+    }
 }

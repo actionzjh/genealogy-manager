@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人物详情 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .person-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .person-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        .gender-m {
+            color: #667eea;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .gender-f {
+            color: #e84393;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+        }
+        .info-label {
+            width: 80px;
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #333;
+            flex: 1;
+        }
+        .biography {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .biography h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .biography p {
+            color: #555;
+            white-space: pre-line;
+        }
+        .relation-section {
+            margin-top: 20px;
+        }
+        .relation-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .relation-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .relation-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .relation-type {
+            font-size: 12px;
+            color: #999;
+        }
+        .relation-name {
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+        .relation-name a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .relation-name a:hover {
+            text-decoration: underline;
+        }
+        .timeline {
+            position: relative;
+            margin-top: 20px;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #ddd;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid #fff;
+        }
+        .timeline-date {
+            font-size: 13px;
+            color: #666;
+        }
+        .timeline-type {
+            display: inline-block;
+            background: #f0f0ff;
+            color: #667eea;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .timeline-desc {
+            color: #333;
+        }
+        .images-section {
+            margin-top: 20px;
+        }
+        .images-section h3 {
+            margin-bottom: 15px;
+        }
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .image-item img {
+            width: 100%;
+            border-radius: 6px;
+        }
+        .image-caption {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .ancestors-path {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .ancestors-path h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .ancestor-chain {
+            color: #555;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+        .error {
+            text-align: center;
+            padding: 60px;
+            color: #e74c3c;
+        }
+        .actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 0 5px;
+        }
+        .back-btn {
+            background: #95a5a6;
+        }
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="loading">加载中...</div>
+        <div class="actions" id="actions" style="display: none;">
+            <a href="javascript:history.back()" class="btn back-btn">← 返回</a>
+            <a href="interactive-tree.html?genealogyId=<span id="genealogyId"></span>" class="btn" target="_blank">🌳 查看世系图</a>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const personId = new URLSearchParams(window.location.search).get('id');
+
+        document.getElementById('personId').value = personId;
+
+        async function loadPersonDetail() {
+            if (!personId) {
+                document.getElementById('content').innerHTML = '<div class="error">缺少人物ID</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/person/${personId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token
+                });
+                const data = await response.json();
+
+                if (data.code === 0) {
+                    renderDetail(data.data);
+                } else {
+                    document.getElementById('content').innerHTML = `<div class="error">${data.message || '加载失败'}</div>';
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('content').innerHTML = `<div class="error">网络错误</div>`;
+            }
+        }
+
+        function renderDetail(person) {
+            let html = `
+                <div class="card">
+                    <div class="person-header">
+                        <div>
+                            <div class="person-name">${escapeHtml(person.name)}</div>
+                            ${person.gender === 'M'
+                                ? '<div class="gender-m">男</div>'
+                                : person.gender === 'F'
+                                    ? '<div class="gender-f">女</div>'
+                                    : '<div style="color:#999">性别未知</div>
+                            }
+                        </div>
+                        <div>
+                            第 ${person.generation || '-'} 世
+                        </div>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">姓名</div>
+                            <div class="info-value">${escapeHtml(person.name)}</div>
+                        </div>
+                        ${person.styleName ? `
+                        <div class="info-item">
+                            <div class="info-label">字</div>
+                            <div class="info-value">${escapeHtml(person.styleName)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.hao ? `
+                        <div class="info-item">
+                            <div class="info-label">号</div>
+                            <div class="info-value">${escapeHtml(person.hao)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.surname ? `
+                        <div class="info-item">
+                            <div class="info-label">姓氏</div>
+                            <div class="info-value">${escapeHtml(person.surname)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.branch ? `
+                        <div class="info-item">
+                            <div class="info-label">支系</div>
+                            <div class="info-value">${escapeHtml(person.branch)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.birthYear ? `
+                        <div class="info-item">
+                            <div class="info-label">出生</div>
+                            <div class="info-value">${escapeHtml(person.birthYear)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.deathYear ? `
+                        <div class="info-item">
+                            <div class="info-label">逝世</div>
+                            <div class="info-value">${escapeHtml(person.deathYear)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.title ? `
+                        <div class="info-item">
+                            <div class="info-label">封号/爵位</div>
+                            <div class="info-value">${escapeHtml(person.title)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.occupation ? `
+                        <div class="info-item">
+                            <div class="info-label">官职/职业</div>
+                            <div class="info-value">${escapeHtml(person.occupation)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.cemeteryLocation ? `
+                        <div class="info-item">
+                            <div class="info-label">墓地位置</div>
+                            <div class="info-value">${escapeHtml(person.cemeteryLocation)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.maritalStatus ? `
+                        <div class="info-item">
+                            <div class="info-label">婚姻状况</div>
+                            <div class="info-value">${escapeHtml(person.maritalStatus)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.status ? `
+                        <div class="info-item">
+                            <div class="info-label">状态</div>
+                            <div class="info-value">${escapeHtml(person.status)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.migrationPath ? `
+                        <div class="info-item">
+                            <div class="info-label">迁徙路线</div>
+                            <div class="info-value">${escapeHtml(person.migrationPath)}</div>
+                        </div>
+                        ` : ''}
+                        ${person.source ? `
+                        <div class="info-item">
+                            <div class="info-label">来源</div>
+                            <div class="info-value">${escapeHtml(person.source)}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+            `;
+
+            // 亲属关系
+            html += `<div class="relation-section"><h3>亲属关系</h3><div class="relation-list">`;
+
+            if (person.fatherId) {
+                html += `
+                    <div class="relation-item">
+                        <div class="relation-type">父亲</div>
+                        <div class="relation-name"><a href="person-detail.html?id=${person.fatherId}">${person.fatherName || '#' + person.fatherId}</a></div>
+                    </div>
+                `;
+            }
+            if (person.motherId) {
+                html += `
+                    <div class="relation-item">
+                        <div class="relation-type">母亲</div>
+                        <div class="relation-name"><a href="person-detail.html?id=${person.motherId}">${person.motherName || '#' + person.motherId}</a></div>
+                    </div>
+                `;
+            }
+            // 这里子女需要后端，简化处理
+
+            html += `</div></div>`;
+
+            // 传记
+            if (person.biography && person.biography.trim()) {
+                html += `
+                    <div class="biography">
+                        <h3>传记</h3>
+                        <p>${escapeHtml(person.biography)}</p>
+                    </div>
+                `;
+            }
+
+            // 成就
+            if (person.achievements && person.achievements.trim()) {
+                html += `
+                    <div class="biography">
+                        <h3>主要功绩</h3>
+                        <p>${escapeHtml(person.achievements)}</p>
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+
+            document.getElementById('content').innerHTML = html;
+
+            // 设置链接
+            if (person.genealogyId) {
+                document.getElementById('genealogyId').textContent = person.genealogyId;
+                document.getElementById('actions').style.display = 'block';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (text == null) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 加载
+        loadPersonDetail();
+    </script>
+</body>
+</html>

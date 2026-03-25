@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>姓氏详情 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            line-height: 1.8;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .nav {
+            background: white;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .content-card h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .content-section {
+            margin-bottom: 25px;
+        }
+        .content-section h3 {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .content-text {
+            color: #555;
+            font-size: 15px;
+            white-space: pre-line;
+        }
+        .stats-box {
+            display: flex;
+            gap: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px 20px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #e74c3c;
+        }
+        .related-genealogies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .related-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #f0f0ff;
+            color: #667eea;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 姓氏百科</h1>
+        <p>寻根溯源，了解姓氏起源</p>
+    </div>
+    <div class="nav">
+        <div class="nav-inner">
+            <a href="portal.html" class="back-link">← 返回门户网站</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="content" class="loading">
+            加载中...
+        </div>
+
+        <a href="surname-list.html" class="back-link">← 返回姓氏列表</a>
+    </div>
+
+    <script>
+        const surname = new URLSearchParams(window.location.search).get('name');
+        const token = localStorage.getItem('token');
+
+        async function loadDetail() {
+            if (!surname) {
+                document.getElementById('content').innerHTML = '<div class="error-state">缺少姓氏参数</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/surname/${encodeURIComponent(surname)}`);
+                const data = await response.json();
+
+                if (data.code === 0) {
+                    renderDetail(data.data);
+                } else {
+                    document.getElementById('content').innerHTML = `<div class="error-state">${data.message || '未找到该姓氏'}</div>`;
+                }
+            } catch (error) {
+                console.error('加载失败', error);
+                document.getElementById('content').innerHTML = '<div class="error-state">加载失败</div>';
+            }
+        }
+
+        function renderDetail(s) {
+            let html = `
+                <div class="content-card">
+                    <h1 style="margin-bottom: 10px;">${escapeHtml(s.name)}</h1>
+                    ${s.pinyin ? `<p style="color:#666;margin-bottom:20px;">拼音：${escapeHtml(s.pinyin)}</p>` : ''}
+                    <div class="stats-box">
+                        <div class="stat-item">
+                            <div class="stat-value">${s.genealogyCount || 0}</div>
+                            <div class="stat-label">现有家谱</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (s.origin && s.origin.trim()) {
+                html += `
+                    <div class="content-card">
+                        <h2>起源</h2>
+                        <div class="content-text">${escapeHtml(s.origin)}</div>
+                    </div>
+                `;
+            }
+
+            if (s.junwang && s.junwang.trim()) {
+                html += `
+                    <div class="content-card">
+                        <h2>郡望</h2>
+                        <div class="content-text">${escapeHtml(s.junwang)}</div>
+                    </div>
+                `;
+            }
+
+            if (s.tanghao && s.tanghao.trim()) {
+                html += `
+                    <div class="content-card">
+                        <h2>堂号</h2>
+                        <div class="content-text">${escapeHtml(s.tanghao)}</div>
+                    </div>
+                `;
+            }
+
+            if (s.famousPeople && s.famousPeople.trim()) {
+                html += `
+                    <div class="content-card">
+                        <h2>历史名人</h2>
+                        <div class="content-text">${escapeHtml(s.famousPeople)}</div>
+                    </div>
+                `;
+            }
+
+            if (s.migration && s.migration.trim()) {
+                html += `
+                    <div class="content-card">
+                        <h2>迁徙分布</h2>
+                        <div class="content-text">${escapeHtml(s.migration)}</div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('content').innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        loadDetail();
+    </script>
+</body>
+</html>

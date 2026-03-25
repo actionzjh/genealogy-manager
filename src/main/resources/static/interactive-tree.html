@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交互式世系图 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 20px;
+            margin-right: 30px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        .control-item input {
+            width: 120px;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .sidebar {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            width: 300px;
+            bottom: 0;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 99;
+            display: none;
+        }
+        .sidebar.show {
+            display: block;
+        }
+        .sidebar h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .person-info {
+            font-size: 14px;
+            line-height: 2;
+        }
+        .person-info .name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .person-info .label {
+            color: #666;
+            display: inline-block;
+            width: 70px;
+        }
+        .person-info .gender-m {
+            color: #667eea;
+        }
+        .person-info .gender-f {
+            color: #e84393;
+        }
+        .links {
+            margin-top: 15px;
+        }
+        .links a {
+            display: inline-block;
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        #svg-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node circle {
+            stroke: #fff;
+            stroke-width: 2px;
+        }
+        .node text {
+            font-size: 12px;
+            fill: #333;
+            text-anchor: middle;
+        }
+        .node.selected circle {
+            stroke: #ff6b6b;
+            stroke-width: 4px;
+        }
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            color: #666;
+        }
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 98;
+        }
+        .legend-item {
+            display: inline-block;
+            margin-right: 15px;
+        }
+        .legend-circle {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                top: auto;
+                height: 40%;
+            }
+            #svg-container {
+                bottom: 40%;
+            }
+            .header {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 10px;
+                gap: 10px;
+            }
+            .header h1 {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌳 交互式世系图</h1>
+        <div class="controls">
+            <div class="control-item">
+                <span>家谱ID:</span>
+                <input type="number" id="genealogyId" placeholder="输入家谱ID">
+            </div>
+            <button class="btn" onclick="loadData()">加载</button>
+            <button class="btn" onclick="resetZoom()">重置视图</button>
+            <button class="btn" onclick="toggleSidebar()">详情</button>
+        </div>
+    </div>
+
+    <div id="sidebar" class="sidebar">
+        <h3>👤 人物详情</h3>
+        <div id="personDetail" class="person-info">
+            <p style="color: #999;">点击左侧图表中的人物查看详情</p>
+        </div>
+    </div>
+
+    <div id="svg-container">
+        <svg></svg>
+        <div class="loading" id="loading">请输入家谱ID，点击加载</div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <span class="legend-circle" style="background: #667eea;"></span>
+            <span>男性</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-circle" style="background: #e84393;"></span>
+            <span>女性</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-circle" style="background: #999;"></span>
+            <span>未知</span>
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const genealogyId = new URLSearchParams(window.location.search).get('genealogyId');
+        if (genealogyId) {
+            document.getElementById('genealogyId').value = genealogyId;
+        }
+
+        let svg = d3.select("svg");
+        let g = svg.append("g");
+        let zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+
+        let currentData = null;
+        let simulation = null;
+        let selectedPerson = null;
+
+        function resetZoom() {
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        function getGenderColor(gender) {
+            if (gender === 'M') return '#667eea';
+            if (gender === 'F') return '#e84393';
+            return '#999';
+        }
+
+        function loadData() {
+            const genealogyId = document.getElementById('genealogyId').value;
+            if (!genealogyId) {
+                alert('请输入家谱ID');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').textContent = '加载中...';
+
+            // 获取所有人
+            fetch(`/api/person/genealogy/${genealogyId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 0) {
+                    buildGraph(data.data);
+                } else {
+                    alert('加载失败: ' + (data.message || '未知错误'));
+                }
+                document.getElementById('loading').style.display = 'none';
+            })
+            .catch(err => {
+                console.error(err);
+                alert('网络错误');
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        function buildGraph(persons) {
+            // 构建nodes和links
+            const nodes = persons.map(p => ({
+                id: p.id,
+                name: p.name,
+                gender: p.gender,
+                generation: p.generation || 0,
+                fatherId: p.fatherId,
+                motherId: p.motherId,
+                data: p
+            }));
+
+            const nodeMap = new Map();
+            nodes.forEach(n => nodeMap.set(n.id, n));
+
+            const links = [];
+            nodes.forEach(n => {
+                // 连接到父亲
+                if (n.fatherId && nodeMap.has(n.fatherId)) {
+                    links.push({
+                        source: n.fatherId,
+                        target: n.id,
+                        value: 1
+                    });
+                }
+                // 连接到母亲
+                if (n.motherId && nodeMap.has(n.motherId)) {
+                    links.push({
+                        source: n.motherId,
+                        target: n.id,
+                        value: 1
+                    });
+                }
+            });
+
+            // 将id转换为对象引用（d3 force要求）
+            const graph = {
+                nodes: nodes,
+                links: links.map(l => ({
+                    source: nodeMap.get(l.source),
+                    target: nodeMap.get(l.target),
+                    value: l.value
+                }))
+            };
+
+            currentData = graph;
+            renderGraph(graph);
+        }
+
+        function renderGraph(graph) {
+            g.selectAll("*").remove();
+
+            // 力导向模拟
+            simulation = d3.forceSimulation(graph.nodes)
+                .force("link", d3.forceLink(graph.links).id(d => d.id).distance(d => {
+                    // 根据世代调整距离
+                    return 100;
+                }))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(
+                    svg.attr("width") / 2,
+                    svg.attr("height") / 2
+                ))
+                .force("x", d3.forceX(d => (d.generation - 1) * 120).strength(0.1))
+                .force("y", d3.forceY(0).strength(0.05));
+
+            // 连线
+            const link = g.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(graph.links)
+                .enter().append("line")
+                .attr("class", "link")
+                .attr("stroke-width", d => Math.sqrt(d.value) * 2);
+
+            // 节点
+            const node = g.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(graph.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .on("click", (event, d) => selectNode(d));
+
+            // 节点圆圈
+            node.append("circle")
+                .attr("r", d => 8 + Math.min(d.data.generation || 1, 5))
+                .attr("fill", d => getGenderColor(d.gender));
+
+            // 节点文字
+            node.append("text")
+                .attr("dy", 20)
+                .text(d => d.name);
+
+            // 拖拽
+            node.call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                // 保持固定位置，如果想让它回去就设置null
+                // d.fx = null;
+                // d.fy = null;
+            }
+
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+        }
+
+        function selectNode(d) {
+            // 清除之前选中
+            d3.selectAll(".node").classed("selected", false);
+            // 选中当前
+            d3.select(d3.event.currentTarget).classed("selected", true);
+            selectedPerson = d;
+
+            showPersonDetail(d.data);
+            if (!document.getElementById('sidebar').classList.contains('show')) {
+                if (window.innerWidth > 768) {
+                    toggleSidebar();
+                }
+            }
+        }
+
+        function showPersonDetail(p) {
+            const container = document.getElementById('personDetail');
+            const genderText = p.gender === 'M' ? '男' : p.gender === 'F' ? '女' : '未知';
+            const genderClass = p.gender === 'M' ? 'gender-m' : p.gender === 'F' ? 'gender-f' : '';
+
+            let html = `
+                <div class="name">${escapeHtml(p.name)}</div>
+                <p><span class="label">性别:</span> <span class="${genderClass}">${genderText}</span></p>
+                <p><span class="label">世代:</span> ${p.generation || '-'}</p>
+            `;
+
+            if (p.data.birthYear) {
+                html += `<p><span class="label">出生:</span> ${escapeHtml(p.data.birthYear)}</p>`;
+            }
+            if (p.data.deathYear) {
+                html += `<p><span class="label">逝世:</span> ${escapeHtml(p.data.deathYear)}</p>`;
+            }
+            if (p.data.title) {
+                html += `<p><span class="label">封号:</span> ${escapeHtml(p.data.title)}</p>`;
+            }
+            if (p.data.occupation) {
+                html += `<p><span class="label">官职:</span> ${escapeHtml(p.data.occupation)}</p>`;
+            }
+            if (p.data.branch) {
+                html += `<p><span class="label">支系:</span> ${escapeHtml(p.data.branch)}</p>`;
+            }
+            if (p.data.biography) {
+                html += `<p><span class="label">传记:</span><br>${escapeHtml(p.data.biography)}</p>`;
+            }
+
+            html += `
+                <div class="links">
+                    <a href="person-detail.html?id=${p.id}" target="_blank">📝 编辑详情 →</a>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 自动加载
+        if (genealogyId) {
+            loadData();
+        }
+    </script>
+</body>
+</html>

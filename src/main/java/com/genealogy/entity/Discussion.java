@@ -5,55 +5,61 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 家谱实体 - 一个家谱对应一个家族
+ * 讨论/寻亲公告实体 - 用户发布寻亲信息或讨论
  */
 @Data
 @Entity
-@Table(name = "genealogy")
-public class Genealogy {
-    
+@Table(name = "discussion")
+public class Discussion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 家谱名称
+     * 标题
      */
     @Column(length = 200, nullable = false)
-    private String name;
+    private String title;
 
     /**
-     * 姓氏
+     * 内容
+     */
+    @Column(length = 5000)
+    private String content;
+
+    /**
+     * 类型: search-寻亲, discussion-讨论
+     */
+    @Column(length = 20)
+    private String type;
+
+    /**
+     * 关联家谱ID（可选）
+     */
+    private Long genealogyId;
+
+    /**
+     * 发布者用户ID
+     */
+    private Long userId;
+
+    /**
+     * 发布者昵称
      */
     @Column(length = 100)
-    private String surname;
+    private String authorName;
 
     /**
-     * 始祖ID
+     * 状态: open-开放, closed-已找到/已关闭
      */
-    private Long founderId;
+    @Column(length = 20)
+    private String status = "open";
 
     /**
-     * 家谱描述
+     * 浏览次数
      */
-    @Column(length = 2000)
-    private String description;
-
-    /**
-     * 起源地
-     */
-    @Column(length = 200)
-    private String originPlace;
-
-    /**
-     * 总人数
-     */
-    private Integer totalPeople;
-
-    /**
-     * 最大世代数
-     */
-    private Integer maxGeneration;
+    private Integer viewCount = 0;
 
     /**
      * 创建时间
@@ -66,15 +72,13 @@ public class Genealogy {
      */
     private LocalDateTime updatedAt;
 
-    /**
-     * 所属用户ID
-     */
-    private Long userId;
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+        if (viewCount == null) {
+            viewCount = 0;
+        }
     }
 
     @PreUpdate

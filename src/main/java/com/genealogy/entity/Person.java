@@ -159,6 +159,11 @@ public class Person {
      */
     private java.time.LocalDateTime updatedAt;
 
+    /**
+     * 所属用户ID
+     */
+    private Long userId;
+
     @PrePersist
     protected void onCreate() {
         createdAt = java.time.LocalDateTime.now();

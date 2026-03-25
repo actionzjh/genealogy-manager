@@ -5,55 +5,59 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 家谱实体 - 一个家谱对应一个家族
+ * 人物图片实体 - 支持多张照片
  */
 @Data
 @Entity
-@Table(name = "genealogy")
-public class Genealogy {
+@Table(name = "person_image")
+public class PersonImage {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 家谱名称
+     * 家谱ID
      */
-    @Column(length = 200, nullable = false)
-    private String name;
+    private Long genealogyId;
 
     /**
-     * 姓氏
+     * 人物ID
      */
-    @Column(length = 100)
-    private String surname;
+    private Long personId;
 
     /**
-     * 始祖ID
+     * 图片URL或文件路径
      */
-    private Long founderId;
+    @Column(length = 500, nullable = false)
+    private String imageUrl;
 
     /**
-     * 家谱描述
-     */
-    @Column(length = 2000)
-    private String description;
-
-    /**
-     * 起源地
+     * 图片说明/标题
      */
     @Column(length = 200)
-    private String originPlace;
+    private String caption;
 
     /**
-     * 总人数
+     * 拍摄日期
      */
-    private Integer totalPeople;
+    @Column(length = 50)
+    private String shootDate;
 
     /**
-     * 最大世代数
+     * 是否为头像
      */
-    private Integer maxGeneration;
+    private Boolean isAvatar = false;
+
+    /**
+     * 排序序号
+     */
+    private Integer sortOrder = 0;
+
+    /**
+     * 所属用户ID
+     */
+    private Long userId;
 
     /**
      * 创建时间
@@ -65,11 +69,6 @@ public class Genealogy {
      * 更新时间
      */
     private LocalDateTime updatedAt;
-
-    /**
-     * 所属用户ID
-     */
-    private Long userId;
 
     @PrePersist
     protected void onCreate() {

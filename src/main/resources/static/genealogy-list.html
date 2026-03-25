@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的家谱 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 24px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info span {
+            font-size: 14px;
+        }
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .actions-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            max-width: 300px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .genealogy-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .genealogy-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .genealogy-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .genealogy-card h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .genealogy-card .surname {
+            display: inline-block;
+            background: #f0f0ff;
+            color: #667eea;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .genealogy-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .genealogy-card .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .card-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-view {
+            flex: 1;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            font-size: 14px;
+        }
+        .btn-delete {
+            background: #fff0f0;
+            color: #e74c3c;
+            border: 1px solid #ffcccc;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal-content h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .modal-form .form-group {
+            margin-bottom: 18px;
+        }
+        .modal-form label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 500;
+        }
+        .modal-form input, .modal-form textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .modal-form textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: flex-end;
+        }
+        .btn-cancel {
+            padding: 10px 24px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-submit {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        @media (max-width: 768px) {
+            .genealogy-list {
+                grid-template-columns: 1fr;
+            }
+            .actions-bar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            .search-box {
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>我的家谱</h1>
+            <div class="user-info">
+                <span id="displayName"></span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="actions-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索家谱名称..." oninput="searchGenealogies()">
+            </div>
+            <button class="btn-create" onclick="openCreateModal()">+ 新建家谱</button>
+        </div>
+
+        <div id="loading" class="loading">加载中...</div>
+        <div id="genealogyList" class="genealogy-list"></div>
+    </div>
+
+    <!-- 新建家谱弹窗 -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h2>新建家谱</h2>
+            <form class="modal-form" id="createForm">
+                <div class="form-group">
+                    <label>家谱名称 *</label>
+                    <input type="text" id="name" name="name" required placeholder="请输入家谱名称">
+                </div>
+                <div class="form-group">
+                    <label>姓氏</label>
+                    <input type="text" id="surname" name="surname" placeholder="例如：张">
+                </div>
+                <div class="form-group">
+                    <label>起源地</label>
+                    <input type="text" id="originPlace" name="originPlace" placeholder="例如：江西省吉安市">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="description" name="description" placeholder="简单描述这个家谱..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeCreateModal()">取消</button>
+                    <button type="submit" class="btn-submit">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('displayName').textContent = localStorage.getItem('displayName') || localStorage.getItem('username');
+
+        async function loadGenealogies() {
+            try {
+                const response = await fetch('/api/genealogy', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                renderGenealogies(data);
+            } catch (error) {
+                console.error('加载失败', error);
+                document.getElementById('loading').textContent = '加载失败，请刷新重试';
+            }
+        }
+
+        function renderGenealogies(data) {
+            const container = document.getElementById('genealogyList');
+            document.getElementById('loading').style.display = 'none';
+
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                            <path d="M11 7h2v2h-2zm0 4h2v6h-2z"/>
+                        </svg>
+                        <p>还没有创建任何家谱</p>
+                        <p style="margin-top: 10px; font-size: 14px;">点击"新建家谱"开始创建吧</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = data.map(g => `
+                <div class="genealogy-card">
+                    <h3>${escapeHtml(g.name)}</h3>
+                    ${g.surname ? `<span class="surname">${escapeHtml(g.surname)}</span>` : ''}
+                    ${g.description ? `<p>${escapeHtml(g.description)}</p>` : ''}
+                    ${g.originPlace ? `<p>📍 ${escapeHtml(g.originPlace)}</p>` : ''}
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${g.totalPeople || 0}</div>
+                            <div class="stat-label">人数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${g.maxGeneration || 0}</div>
+                            <div class="stat-label">世代</div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <a class="btn-view" href="person-list.html?genealogyId=${g.id}">查看详情</a>
+                        <button class="btn-delete" onclick="deleteGenealogy(${g.id})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function searchGenealogies() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            // 简单前端搜索，实际可以做后端搜索
+            loadGenealogies(); // 这里简化，重新加载后前端过滤
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+            document.getElementById('createForm').reset();
+        }
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const genealogy = {
+                name: document.getElementById('name').value,
+                surname: document.getElementById('surname').value,
+                originPlace: document.getElementById('originPlace').value,
+                description: document.getElementById('description').value,
+                userId: parseInt(userId)
+            };
+
+            try {
+                const response = await fetch('/api/genealogy', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(genealogy)
+                });
+
+                if (response.ok) {
+                    closeCreateModal();
+                    loadGenealogies();
+                } else {
+                    alert('创建失败');
+                }
+            } catch (error) {
+                alert('网络错误');
+            }
+        });
+
+        async function deleteGenealogy(id) {
+            if (!confirm('确定要删除这个家谱吗？此操作不可撤销。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/genealogy/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (response.ok) {
+                    loadGenealogies();
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                alert('网络错误');
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // 页面加载
+        loadGenealogies();
+    </script>
+</body>
+</html>

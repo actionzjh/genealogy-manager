@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>姓氏百科 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .nav {
+            background: white;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .search-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        .surname-list {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1px;
+        }
+        .surname-item {
+            padding: 15px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: background 0.2s;
+        }
+        .surname-item:hover {
+            background: #f0f0ff;
+        }
+        .surname-item a {
+            text-decoration: none;
+            color: #333;
+        }
+        .surname-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .surname-count {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        @media (max-width: 768px) {
+            .surname-list {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📚 姓氏百科</h1>
+        <p>寻根溯源，了解姓氏起源</p>
+    </div>
+    <div class="nav">
+        <div class="nav-inner">
+            <a href="portal.html" class="back-link">← 返回门户网站</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="输入姓氏搜索..." oninput="searchSurnames()">
+        </div>
+
+        <div class="surname-list" id="surnameList">
+            <div class="loading empty-state">加载中...</div>
+        </div>
+
+        <a href="portal.html" class="back-link">← 返回门户网站</a>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        async function loadSurnames() {
+            try {
+                const response = await fetch('/api/surname/popular');
+                const data = await response.json();
+                if (data.code === 0) {
+                    renderList(data.data);
+                }
+            } catch (error) {
+                console.error('加载失败', error);
+                document.getElementById('surnameList').innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        async function searchSurnames() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            if (!keyword) {
+                loadSurnames();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/surname/search?keyword=${encodeURIComponent(keyword)}`);
+                const data = await response.json();
+                if (data.code === 0) {
+                    renderList(data.data);
+                }
+            } catch (error) {
+                console.error('搜索失败', error);
+            }
+        }
+
+        function renderList(surnames) {
+            const container = document.getElementById('surnameList');
+
+            if (surnames.length === 0) {
+                container.innerHTML = '<div class="empty-state">未找到相关姓氏</div>';
+                return;
+            }
+
+            let html = '';
+            surnames.forEach(s => {
+                html += `
+                    <div class="surname-item">
+                        <a href="surname-detail.html?name=${s.name}">
+                            <div class="surname-name">${escapeHtml(s.name)}</div>
+                            <div class="surname-count">${s.genealogyCount || 0} 部家谱</div>
+                        </a>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 加载
+        loadSurnames();
+    </script>
+</body>
+</html>

@@ -26,55 +26,63 @@ public class GenealogyService {
     }
 
     /**
-     * 根据ID查找
+     * 根据ID查找（需要验证所有权）
      */
     public Optional<Genealogy> findById(Long id) {
         return genealogyRepository.findById(id);
     }
 
     /**
-     * 查询所有
+     * 验证所有权
      */
-    public List<Genealogy> findAll() {
-        return genealogyRepository.findAll();
+    public boolean isOwner(Long id, Long userId) {
+        Optional<Genealogy> genealogy = findById(id);
+        return genealogy.isPresent() && genealogy.get().getUserId().equals(userId);
     }
 
     /**
-     * 分页查询
+     * 查询用户的所有家谱
      */
-    public Page<Genealogy> findAll(int page, int size) {
+    public List<Genealogy> findByUserId(Long userId) {
+        return genealogyRepository.findByUserId(userId);
+    }
+
+    /**
+     * 分页查询用户的家谱
+     */
+    public Page<Genealogy> findByUserId(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        return genealogyRepository.findAll(pageable);
+        return genealogyRepository.findByUserId(userId, pageable);
     }
 
     /**
-     * 删除
+     * 删除（调用前需验证所有权）
      */
     public void deleteById(Long id) {
         genealogyRepository.deleteById(id);
     }
 
     /**
-     * 搜索
+     * 在用户范围内搜索
      */
-    public List<Genealogy> search(String keyword) {
+    public List<Genealogy> search(Long userId, String keyword) {
         if (!StringUtils.hasText(keyword)) {
-            return findAll();
+            return findByUserId(userId);
         }
-        return genealogyRepository.findByNameContainingIgnoreCase(keyword);
+        return genealogyRepository.findByUserIdAndNameContainingIgnoreCase(userId, keyword);
     }
 
     /**
-     * 根据姓氏查找
+     * 根据姓氏查找（用户范围内）
      */
-    public List<Genealogy> findBySurname(String surname) {
+    public List<Genealogy> findBySurname(Long userId, String surname) {
         return genealogyRepository.findBySurnameContainingIgnoreCase(surname);
     }
 
     /**
-     * 统计总数
+     * 统计用户家谱数量
      */
-    public long count() {
-        return genealogyRepository.count();
+    public long countByUserId(Long userId) {
+        return genealogyRepository.countByUserId(userId);
     }
 }

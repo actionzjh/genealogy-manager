@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel导入家谱 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .template-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #409eff;
+        }
+        .template-info h3 {
+            margin-bottom: 10px;
+            color: #409eff;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px 0;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #409eff;
+        }
+        .upload-area.dragover {
+            border-color: #67c23a;
+            background-color: #fafff5;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #409eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #66b1ff;
+        }
+        .btn-primary {
+            background: #67c23a;
+        }
+        .btn-primary:hover {
+            background: #85ce61;
+        }
+        .file-info {
+            margin: 15px 0;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 4px;
+            display: none;
+        }
+        .progress {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #67c23a;
+            width: 0;
+            transition: width 0.3s;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .result.success {
+            background: #f0f9eb;
+            border: 1px solid #e1f3d8;
+            color: #67c23a;
+            display: block;
+        }
+        .result.error {
+            background: #fef0f0;
+            border: 1px solid #fde2e2;
+            color: #f56c6c;
+            display: block;
+        }
+        .template-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .template-table th, .template-table td {
+            border: 1px solid #dcdfe6;
+            padding: 8px;
+            text-align: left;
+        }
+        .template-table th {
+            background: #f5f7fa;
+            font-weight: bold;
+        }
+        .required {
+            color: #f56c6c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel导入家谱</h1>
+
+        <div class="template-info">
+            <h3>📋 导入格式说明</h3>
+            <p>Excel文件包含两个工作表：</p>
+            <ol>
+                <li><strong>第一个Sheet</strong>：家谱基本信息（只需填写一行）</li>
+                <li><strong>第二个Sheet</strong>：人物信息，一行一个人</li>
+            </ol>
+            <p style="margin-top: 10px;">
+                <a href="/api/import/template" class="btn">⬇️ 下载Excel模板</a>
+            </p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <p>拖拽Excel文件到这里，或</p>
+            <br>
+            <label for="fileInput" class="btn">选择文件</label>
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <div class="file-info" id="fileInfo">
+                已选择文件：<span id="fileName"></span>
+            </div>
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>开始导入</button>
+        </div>
+
+        <div class="result" id="result"></div>
+
+        <div style="margin-top: 40px;">
+            <h3>📝 字段说明（人物信息表）</h3>
+            <table class="template-table">
+                <thead>
+                    <tr>
+                        <th>表头</th>
+                        <th>必填</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>姓名*</td>
+                        <td><span class="required">是</span></td>
+                        <td>人物姓名</td>
+                    </tr>
+                    <tr>
+                        <td>字</td>
+                        <td>否</td>
+                        <td>古人的字</td>
+                    </tr>
+                    <tr>
+                        <td>号</td>
+                        <td>否</td>
+                        <td>古人的号</td>
+                    </tr>
+                    <tr>
+                        <td>性别</td>
+                        <td>否</td>
+                        <td>男/女</td>
+                    </tr>
+                    <tr>
+                        <td>出生年份</td>
+                        <td>否</td>
+                        <td>例如：1800</td>
+                    </tr>
+                    <tr>
+                        <td>逝世年份</td>
+                        <td>否</td>
+                        <td>例如：1880</td>
+                    </tr>
+                    <tr>
+                        <td>父亲姓名</td>
+                        <td>否</td>
+                        <td>必须和Excel中父亲的姓名一致，用于建立关系</td>
+                    </tr>
+                    <tr>
+                        <td>母亲姓名</td>
+                        <td>否</td>
+                        <td>必须和Excel中母亲的姓名一致</td>
+                    </tr>
+                    <tr>
+                        <td>配偶姓名</td>
+                        <td>否</td>
+                        <td>必须和Excel中配偶的姓名一致</td>
+                    </tr>
+                    <tr>
+                        <td>支系</td>
+                        <td>否</td>
+                        <td>例如：长房、二房</td>
+                    </tr>
+                    <tr>
+                        <td>世代代数</td>
+                        <td>否</td>
+                        <td>从始祖开始算，始祖为1</td>
+                    </tr>
+                    <tr>
+                        <td>排序序号</td>
+                        <td>否</td>
+                        <td>同辈中的排序，用于世系图排序</td>
+                    </tr>
+                    <tr>
+                        <td>迁徙路线</td>
+                        <td>否</td>
+                        <td>描述迁徙过程</td>
+                    </tr>
+                    <tr>
+                        <td>功绩/称号</td>
+                        <td>否</td>
+                        <td>主要成就或称号</td>
+                    </tr>
+                    <tr>
+                        <td>传记</td>
+                        <td>否</td>
+                        <td>人物生平简介</td>
+                    </tr>
+                    <tr>
+                        <td>传记来源</td>
+                        <td>否</td>
+                        <td>例如：族谱记载、墓碑</td>
+                    </tr>
+                    <tr>
+                        <td>墓地位置</td>
+                        <td>否</td>
+                        <td>安葬地点</td>
+                    </tr>
+                    <tr>
+                        <td>封号/爵位</td>
+                        <td>否</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>官职/职业</td>
+                        <td>否</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>婚姻状况</td>
+                        <td>否</td>
+                        <td>已婚/未婚等</td>
+                    </tr>
+                    <tr>
+                        <td>状态</td>
+                        <td>否</td>
+                        <td>在世/去世</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/">← 返回主页</a>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const result = document.getElementById('result');
+
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // 点击选择文件
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                showResult('只支持 .xlsx 或 .xls 格式的Excel文件', false);
+                return;
+            }
+            selectedFile = file;
+            fileName.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+            fileInfo.style.display = 'block';
+            uploadBtn.disabled = false;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function uploadFile() {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            progress.style.display = 'block';
+            progressBar.style.width = '30%';
+            result.style.display = 'none';
+
+            fetch('/api/import/genealogy', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                progressBar.style.width = '100%';
+                if (data.success) {
+                    let msg = `<strong>✅ 导入成功</strong><br>${data.message}`;
+                    if (data.errors && data.errors.length > 0) {
+                        msg += '<br><br>警告信息：<ul>';
+                        data.errors.forEach(err => msg += `<li>${err}</li>`);
+                        msg += '</ul>';
+                    }
+                    msg += `<br><a href="/">查看家谱列表</a>`;
+                    showResult(msg, true);
+                } else {
+                    showResult(`<strong>❌ 导入失败</strong><br>${data.message}`, false);
+                }
+            })
+            .catch(error => {
+                progressBar.style.width = '100%';
+                showResult(`<strong>❌ 请求失败</strong><br>${error.message}`, false);
+            });
+        }
+
+        function showResult(message, isSuccess) {
+            result.innerHTML = message;
+            result.className = 'result ' + (isSuccess ? 'success' : 'error');
+            progress.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

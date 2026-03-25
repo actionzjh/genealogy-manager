@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>门户网站 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .nav {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 15px 0;
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 30px;
+        }
+        .nav a {
+            color: #333;
+            text-decoration: none;
+            padding: 5px 0;
+            border-bottom: 2px solid transparent;
+        }
+        .nav a:hover {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+        .main {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .stats-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .stats-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .latest-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .latest-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .more-link {
+            font-size: 14px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .notice-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .notice-item {
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            transition: box-shadow 0.2s;
+        }
+        .notice-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .notice-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .notice-meta {
+            font-size: 12px;
+            color: #999;
+        }
+        .notice-meta span {
+            margin-right: 15px;
+        }
+        .badge-open {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e8fff3;
+            color: #2ecc71;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .badge-closed {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #f0f0f0;
+            color: #999;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .sidebar-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .sidebar-section h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .popular-surname {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .popular-surname a {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #f0f0ff;
+            color: #667eea;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .popular-surname a:hover {
+            background: #667eea;
+            color: white;
+        }
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .btn {
+            display: block;
+            padding: 10px 15px;
+            text-align: center;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 15px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 14px;
+        }
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .nav-inner {
+                overflow-x: auto;
+                gap: 15px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>家谱管理系统</h1>
+        <p>分享家族历史 · 连接血脉亲情 · 共同传承文化</p>
+    </div>
+
+    <div class="nav">
+        <div class="nav-inner">
+            <a href="portal.html">门户网站</a>
+            <a href="search-notice.html">寻亲公告</a>
+            <a href="surname-list.html">姓氏百科</a>
+            <a href="index.html">管理后台</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main">
+            <div class="stats-section">
+                <h2>📊 网站统计</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+
+            <div class="latest-section">
+                <h2>
+                    🔍 最新寻亲公告
+                    <a href="search-notice.html" class="more-link">查看全部 →</a>
+                </h2>
+                <div class="notice-list" id="latestNotices">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>🔍 搜索姓氏百科</h3>
+                <div class="search-box">
+                    <input type="text" id="surnameSearch" placeholder="输入姓氏搜索...">
+                    <div id="searchResult" style="display: none; position: absolute; top: 45px; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>🔥 热门姓氏</h3>
+                <div class="popular-surname" id="popularSurnames">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>⚡ 快速入口</h3>
+                <div class="quick-actions">
+                    <a href="login.html" class="btn btn-primary">用户登录</a>
+                    <a href="register.html" class="btn btn-secondary">用户注册</a>
+                    <a href="search-notice.html" class="btn btn-secondary">发布寻亲</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>家谱管理系统 • 开源免费 • 数据人人共享</p>
+    </div>
+
+    <script>
+        // 加载统计
+        async function loadStats() {
+            try {
+                const [gRes, pRes, fRes, dRes] = await Promise.all([
+                    fetch('/api/genealogy/stats'),
+                    fetch('/api/person/stats'),
+                    fetch('/api/family/stats'),
+                    fetch('/api/discussion/latest')
+                ]);
+
+                const gData = await gRes.json();
+                const pData = await pRes.json();
+                const fData = await fRes.json();
+                const dData = await dRes.json();
+
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${gData.totalGenealogies || 0}</div>
+                        <div class="stat-label">家谱总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${pData.totalPeople || 0}</div>
+                        <div class="stat-label">人物总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${fData.totalFamilies || 0}</div>
+                        <div class="stat-label">家庭关系</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${dData.data ? dData.data.length : 0}</div>
+                        <div class="stat-label">公开寻亲</div>
+                    </div>
+                `;
+
+                // 加载最新公告
+                if (dData.code === 0 && dData.data) {
+                    renderLatestNotices(dData.data);
+                }
+            } catch (error) {
+                console.error('加载失败', error);
+                document.getElementById('statsGrid').innerHTML = '<div style="color:#e74c3c;">加载失败</div>';
+            }
+        }
+
+        function renderLatestNotices(notices) {
+            const container = document.getElementById('latestNotices');
+            if (notices.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#999;">暂无寻亲公告</p>';
+                return;
+            }
+
+            let html = '';
+            notices.slice(0, 5).forEach(n => {
+                const badge = n.status === 'open' ?
+                    '<span class="badge-open">寻亲中</span>' :
+                    '<span class="badge-closed">已找到</span>';
+
+                html += `
+                    <div class="notice-item">
+                        <div class="notice-title">${escapeHtml(n.title)}</div>
+                        <div class="notice-meta">
+                            <span>${escapeHtml(n.authorName || '匿名')}</span>
+                            <span>${new Date(n.createdAt).toLocaleDateString()}</span>
+                            ${badge}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 加载热门姓氏
+        async function loadPopularSurnames() {
+            try {
+                const response = await fetch('/api/surname/popular');
+                const data = await response.json();
+                const container = document.getElementById('popularSurnames');
+
+                if (data.code === 0 && data.data.length > 0) {
+                    let html = '';
+                    data.data.slice(0, 12).forEach(s => {
+                        html += `<a href="surname-detail.html?name=${s.name}">${escapeHtml(s.name)}</a>`;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div style="color:#999;font-size:14px;">暂无数据</div>';
+                }
+            } catch (error) {
+                console.error('加载失败', error);
+            }
+        }
+
+        // 姓氏搜索
+        let searchTimer = null;
+        document.getElementById('surnameSearch').addEventListener('input', (e) => {
+            clearTimeout(searchTimer);
+            const keyword = e.target.value.trim();
+            const resultBox = document.getElementById('searchResult');
+
+            if (keyword.length === 0) {
+                resultBox.style.display = 'none';
+                return;
+            }
+
+            searchTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/surname/search?keyword=${encodeURIComponent(keyword)}`);
+                    const data = await response.json();
+
+                    if (data.code === 0 && data.data.length > 0) {
+                        let html = '';
+                        data.data.forEach(s => {
+                            html += `
+                                <div style="padding: 8px 12px; border-bottom: 1px solid #eee; cursor: pointer;"
+                                     onmouseover="this.style.background='#f5f5f5'"
+                                     onmouseout="this.style.background='transparent'"
+                                     onclick="window.location.href='surname-detail.html?name=${s.name}'">
+                                    <strong>${escapeHtml(s.name)}</strong>
+                                    <span style="float:right; color:#999; font-size:12px;">${s.genealogyCount} 部家谱</span>
+                                </div>
+                            `;
+                        });
+                        resultBox.innerHTML = html;
+                        resultBox.style.display = 'block';
+                    } else {
+                        resultBox.innerHTML = '<div style="padding: 12px; color:#999;">未找到相关姓氏</div>';
+                        resultBox.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('搜索失败', error);
+                }
+            }, 300);
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 页面加载
+        loadStats();
+        loadPopularSurnames();
+    </script>
+</body>
+</html>

@@ -5,55 +5,52 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 家谱实体 - 一个家谱对应一个家族
+ * 用户实体 - 系统用户
  */
 @Data
 @Entity
-@Table(name = "genealogy")
-public class Genealogy {
+@Table(name = "user")
+public class User {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 家谱名称
+     * 用户名 - 登录用
+     */
+    @Column(length = 50, nullable = false, unique = true)
+    private String username;
+
+    /**
+     * 邮箱 - 用于找回密码
+     */
+    @Column(length = 100, unique = true)
+    private String email;
+
+    /**
+     * 密码哈希
      */
     @Column(length = 200, nullable = false)
-    private String name;
+    private String passwordHash;
 
     /**
-     * 姓氏
+     * 昵称/显示名称
      */
     @Column(length = 100)
-    private String surname;
+    private String displayName;
 
     /**
-     * 始祖ID
+     * 头像URL
      */
-    private Long founderId;
+    @Column(length = 500)
+    private String avatarUrl;
 
     /**
-     * 家谱描述
+     * 账户状态: active-启用, inactive-禁用
      */
-    @Column(length = 2000)
-    private String description;
-
-    /**
-     * 起源地
-     */
-    @Column(length = 200)
-    private String originPlace;
-
-    /**
-     * 总人数
-     */
-    private Integer totalPeople;
-
-    /**
-     * 最大世代数
-     */
-    private Integer maxGeneration;
+    @Column(length = 20)
+    private String status = "active";
 
     /**
      * 创建时间
@@ -67,9 +64,9 @@ public class Genealogy {
     private LocalDateTime updatedAt;
 
     /**
-     * 所属用户ID
+     * 最后登录时间
      */
-    private Long userId;
+    private LocalDateTime lastLoginAt;
 
     @PrePersist
     protected void onCreate() {

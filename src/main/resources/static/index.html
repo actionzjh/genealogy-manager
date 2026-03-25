@@ -129,6 +129,7 @@
     <div class="header">
         <h1>家谱管理系统</h1>
         <p>全方位家谱编排、管理与可视化 - 基于Spring Boot</p>
+        <p style="margin-top: 10px;"><a href="portal.html" style="color: white; text-decoration: underline;">👉 访问公共门户网站 →</a></p>
     </div>
 
     <div class="container">
@@ -151,36 +152,77 @@
         </div>
 
         <div class="cards">
+            <div class="card" style="border: 2px solid #667eea;">
+                <h3>👤 用户中心</h3>
+                <ul>
+                    <li><a href="login.html" target="_blank">用户登录</a></li>
+                    <li><a href="register.html" target="_blank">用户注册</a></li>
+                    <li><a href="genealogy-list.html" target="_blank">我的家谱</a></li>
+                    <li>多家谱隔离，数据隐私保护</li>
+                </ul>
+            </div>
+
             <div class="card">
-                <h3>📋 功能模块</h3>
+                <h3>📋 核心功能</h3>
                 <ul>
                     <li>✅ 人物信息管理</li>
                     <li>✅ 家谱基本信息</li>
                     <li>✅ 家庭关系管理</li>
-                    <li>✅ GEDCOM格式导出</li>
                     <li>✅ RESTful API</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>📥 数据导入</h3>
+                <ul>
+                    <li><a href="import.html" target="_blank">Excel批量导入家谱</a> ✨ 新增</li>
+                    <li>自动识别亲属关系（按姓名匹配）</li>
+                    <li>支持批量导入多个人物</li>
+                    <li>提供标准Excel模板下载</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>📤 PDF导出</h3>
+                <ul>
+                    <li><a href="export-pdf.html" target="_blank">选择排版导出PDF</a> ✨ 新增</li>
+                    <li>GEDCOM 5.5 标准格式导出</li>
+                    <li><strong>表格列表式</strong> - 信息完整清晰</li>
+                    <li><strong>牒记传记式</strong> - 传统家谱格式</li>
+                    <li><strong>欧氏五世表</strong> - 每页五代，方便查阅</li>
+                    <li><strong>苏式宝塔式</strong> - 传统树形宝塔，适合印刷</li>
+                    <li>开放架构，新增格式只需加策略类</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🔍 搜索查询</h3>
+                <ul>
+                    <li><a href="advanced-search.html" target="_blank">高级多条件搜索</a> ✨ 新增</li>
+                    <li>全文关键字搜索</li>
+                    <li>共同祖先/亲缘系数计算</li>
+                    <li>后裔查找/人口统计分析</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>📥 数据导入</h3>
+                <ul>
+                    <li><a href="import.html" target="_blank">Excel批量导入</a></li>
+                    <li><a href="import-gedcom.html" target="_blank">GEDCOM文件导入</a> ✨ 新增</li>
+                    <li>支持从其他家谱软件导入</li>
                 </ul>
             </div>
 
             <div class="card">
                 <h3>📊 可视化</h3>
                 <ul>
+                    <li><a href="interactive-tree.html" target="_blank">交互式世系图</a> ✨ 新增</li>
+                    <li><a href="person-timeline.html" target="_blank">家族时间线</a> ✨ 新增</li>
                     <li><a href="hierarchy-visualizer.html" target="_blank">支系层级可视化</a></li>
                     <li><a href="zhangshi-jiadao.html" target="_blank">交互式家谱仪表板</a></li>
-                    <li>世系树图（待开发）</li>
-                    <li>迁徙路线图（待开发）</li>
+                    <li>迁徙路线地图（待开发）</li>
                 </ul>
-            </div>
-
-            <div class="card">
-                <h3>🔧 API 接口</h3>
-                <div class="api-list">
-                    <div>GET /api/genealogy/list - 家谱列表</div>
-                    <div>GET /api/person/list - 人物列表</div>
-                    <div>GET /api/person/search?keyword=xxx - 搜索</div>
-                    <div>GET /api/export/gedcom - 导出GEDCOM</div>
-                    <div>POST /api/person - 新增人物</div>
-                </div>
             </div>
         </div>
 

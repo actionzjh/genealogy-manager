@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级搜索 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        .header h1 {
+            max-width: 1200px;
+            margin: 0 auto;
+            font-size: 24px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        .filter-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            height: fit-content;
+        }
+        .filter-panel h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn-search {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .result-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .result-header h2 {
+            font-size: 18px;
+            color: #333;
+        }
+        .result-count {
+            color: #666;
+            font-size: 14px;
+        }
+        .person-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .person-card {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 15px;
+            transition: box-shadow 0.2s;
+        }
+        .person-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .person-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .person-info {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.8;
+        }
+        .person-info span {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .gender-m {
+            color: #667eea;
+        }
+        .gender-f {
+            color: #e84393;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .person-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .person-link:hover {
+            text-decoration: underline;
+        }
+        .stats-box {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stats-box h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .person-list {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 高级人物搜索</h1>
+    </div>
+
+    <div class="container">
+        <div class="filter-panel">
+            <h2>筛选条件</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label>所属家谱</label>
+                    <select id="genealogyId" name="genealogyId">
+                        <option value="">全部家谱</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>关键词（全文搜索）</label>
+                    <input type="text" id="keyword" name="keyword" placeholder="搜索姓名、传记、成就...">
+                </div>
+                <div class="form-group">
+                    <label>姓氏</label>
+                    <input type="text" id="surname" name="surname" placeholder="例如：张">
+                </div>
+                <div class="form-group">
+                    <label>名字</label>
+                    <input type="text" id="name" name="name" placeholder="例如：三">
+                </div>
+                <div class="form-group">
+                    <label>性别</label>
+                    <select id="gender" name="gender">
+                        <option value="">不限</option>
+                        <option value="M">男</option>
+                        <option value="F">女</option>
+                        <option value="U">未知</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>世代</label>
+                    <input type="number" id="generation" name="generation" min="1" placeholder="例如：5">
+                </div>
+                <div class="form-group">
+                    <label>支系</label>
+                    <input type="text" id="branch" name="branch" placeholder="例如：长房">
+                </div>
+                <div class="form-group">
+                    <label>出生年份范围</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="birthYearMin" placeholder="从">
+                        <input type="text" id="birthYearMax" placeholder="到">
+                    </div>
+                </div>
+                <button type="submit" class="btn-search">搜索</button>
+            </form>
+
+            <a href="genealogy-list.html" class="back-link">← 返回我的家谱</a>
+        </div>
+
+        <div class="result-panel">
+            <div class="result-header">
+                <h2>搜索结果</h2>
+                <span class="result-count" id="resultCount">共 0 条结果</span>
+            </div>
+            <div id="resultContent">
+                <div class="empty-state">
+                    <p>请在左侧输入筛选条件，点击搜索</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+
+        // 页面加载，获取用户的家谱列表
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMyGenealogies();
+        });
+
+        async function loadMyGenealogies() {
+            try {
+                const response = await fetch('/api/genealogy', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const genealogies = await response.json();
+
+                const select = document.getElementById('genealogyId');
+                genealogies.forEach(g => {
+                    const option = document.createElement('option');
+                    option.value = g.id;
+                    option.textContent = g.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载家谱列表失败', error);
+            }
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await doSearch();
+        });
+
+        async function doSearch() {
+            const filter = {
+                keyword: document.getElementById('keyword').value || null,
+                surname: document.getElementById('surname').value || null,
+                name: document.getElementById('name').value || null,
+                gender: document.getElementById('gender').value || null,
+                generation: document.getElementById('generation').value ?
+                    parseInt(document.getElementById('generation').value) : null,
+                branch: document.getElementById('branch').value || null,
+                genealogyId: document.getElementById('genealogyId').value ?
+                    parseInt(document.getElementById('genealogyId').value) : null
+            };
+
+            try {
+                const response = await fetch('/api/search/advanced', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(filter)
+                });
+                const data = await response.json();
+
+                if (data.code === 0) {
+                    renderResults(data.data, data.total);
+                } else {
+                    alert(data.message || '搜索失败');
+                }
+            } catch (error) {
+                console.error('搜索失败', error);
+                alert('网络错误');
+            }
+        }
+
+        function renderResults(persons, total) {
+            const container = document.getElementById('resultContent');
+            document.getElementById('resultCount').textContent = `共 ${total} 条结果`;
+
+            if (total === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>没有找到匹配的人物</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            persons.forEach(p => {
+                const genderClass = p.gender === 'M' ? 'gender-m' : p.gender === 'F' ? 'gender-f' : '';
+                const genderText = p.gender === 'M' ? '男' : p.gender === 'F' ? '女' : '未知';
+                html += `
+                    <div class="person-card">
+                        <div class="person-name">${escapeHtml(p.name)}</div>
+                        <div class="person-info">
+                            <span class="${genderClass}">${genderText}</span>
+                            <span>第 ${p.generation || '-'} 世</span>
+                            ${p.branch ? `<span>支系: ${escapeHtml(p.branch)}</span>` : ''}
+                        </div>
+                        <div class="person-info">
+                            ${p.birthYear ? `📅 出生: ${escapeHtml(p.birthYear)}` : ''}
+                            ${p.deathYear ? ` / 逝世: ${escapeHtml(p.deathYear)}` : ''}
+                        </div>
+                        ${p.occupation ? `<div class="person-info">👔 ${escapeHtml(p.occupation)}</div>` : ''}
+                        ${p.title ? `<div class="person-info">🎖️ ${escapeHtml(p.title)}</div>` : ''}
+                        <a href="person-detail.html?id=${p.id}&genealogyId=${p.genealogyId}" class="person-link">查看详情 →</a>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `<div class="person-list">${html}</div>`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
