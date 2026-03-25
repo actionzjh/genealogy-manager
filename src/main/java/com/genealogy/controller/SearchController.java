@@ -80,7 +80,7 @@ public class SearchController {
     @GetMapping("/common-ancestors")
     public ResponseEntity<Map<String, Object>> getCommonAncestors(
             @RequestParam Long personId1,
-            @RequestLong personId2,
+            @RequestParam Long personId2,
             Authentication authentication) {
 
         Map<String, Object> result = new HashMap<>();

@@ -38,15 +38,15 @@ public class FamilyService {
     /**
      * 根据丈夫ID查找
      */
-    public List<Family> findByHusbandId(Long husbandId) {
-        return familyRepository.findByHusbandId(husbandId);
+    public List<Family> findByFatherId(Long fatherId) {
+        return familyRepository.findByFatherId(fatherId);
     }
 
     /**
      * 根据妻子ID查找
      */
-    public List<Family> findByWifeId(Long wifeId) {
-        return familyRepository.findByWifeId(wifeId);
+    public List<Family> findByMotherId(Long motherId) {
+        return familyRepository.findByMotherId(motherId);
     }
 
     /**

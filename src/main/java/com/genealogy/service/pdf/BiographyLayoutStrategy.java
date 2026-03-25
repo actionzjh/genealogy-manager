@@ -141,7 +141,7 @@ public class BiographyLayoutStrategy implements PdfLayoutStrategy {
                 .setFontColor(ColorConstants.GRAY);
         document.add(footer);
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**
@@ -165,7 +165,7 @@ public class BiographyLayoutStrategy implements PdfLayoutStrategy {
             document.add(new Paragraph("\n"));
         }
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**
@@ -187,7 +187,7 @@ public class BiographyLayoutStrategy implements PdfLayoutStrategy {
             document.add(new Paragraph("\n"));
         }
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**

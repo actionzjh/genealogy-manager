@@ -75,7 +75,7 @@ public class PdfExportService {
     /**
      * 导出家谱PDF，指定排版格式
      */
-    public ByteArrayOutputStream exportGenealogyToPdf(Long genealogyId, String layoutName) throws IOException {
+    public ByteArrayOutputStream exportGenealogyToPdf(Long genealogyId, String layoutName) throws Exception {
         Genealogy genealogy = genealogyRepository.findById(genealogyId).orElse(null);
         if (genealogy == null) {
             throw new IllegalArgumentException("家谱不存在，ID: " + genealogyId);
@@ -100,7 +100,7 @@ public class PdfExportService {
         document.setMargins(50, 40, 50, 40);
 
         // 加载中文字体
-        PdfFont font = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H", false);
+        PdfFont font = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H", PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
 
         // 使用策略排版
         strategy.layout(document, genealogy, allPersons, font);
@@ -117,7 +117,7 @@ public class PdfExportService {
     /**
      * 使用默认格式导出
      */
-    public ByteArrayOutputStream exportGenealogyToPdf(Long genealogyId) throws IOException {
+    public ByteArrayOutputStream exportGenealogyToPdf(Long genealogyId) throws Exception {
         return exportGenealogyToPdf(genealogyId, "table-list");
     }
 

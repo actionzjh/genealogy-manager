@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.regexp.Pattern;
+import java.util.regex.Pattern;
 
 /**
  * GEDCOM 5.5 文件导入解析器

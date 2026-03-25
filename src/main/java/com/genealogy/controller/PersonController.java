@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -183,7 +184,7 @@ public class PersonController {
         Map<String, Object> result = new HashMap<>();
         result.put("code", 0);
         result.put("totalPeople", personService.count());
-        result.put("maxGeneration", personService.getMaxGeneration());
+        result.put("maxGeneration", personService.getMaxGeneration(null));
         result.put("maleCount", personService.countByGender("M"));
         result.put("femaleCount", personService.countByGender("F"));
         return ResponseEntity.ok(result);

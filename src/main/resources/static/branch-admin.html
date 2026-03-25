@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支系管理后台</title>
+    <link rel="stylesheet" href="/task-module-pattern.css">
+    <style>
+        :root{--bg:#f5f0e7;--surface:rgba(255,255,255,.94);--surface-soft:rgba(255,250,244,.96);--text:#2f241d;--muted:#6f6055;--line:rgba(88,66,53,.14);--accent:#8e4a2d;--accent-deep:#6c2f1a;--danger:#b44c2e;--success:#2f7d4a;--shadow:0 18px 40px rgba(78,52,39,.12)}
+        *{box-sizing:border-box}
+        body{margin:0;font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(214,174,122,.22),transparent 26%),radial-gradient(circle at right 22%,rgba(142,74,45,.12),transparent 22%),linear-gradient(180deg,#f8f4ec 0%,#f2ece2 100%);min-height:100vh}
+        a{text-decoration:none;color:inherit}
+        .page{max-width:1480px;margin:0 auto;padding:24px 18px 42px}
+        .topbar,.crumbs,.hero-actions,.actions,.meta,.chip-row{display:flex;gap:12px;flex-wrap:wrap}
+        .topbar,.tree-row{display:flex;justify-content:space-between;align-items:center}
+        .topbar{margin-bottom:14px}
+        .crumbs{gap:10px;color:var(--muted);font-size:14px}
+        .crumbs a{color:var(--accent);font-weight:700}
+        .lang-switch{display:inline-flex;gap:6px;padding:6px;border-radius:999px;background:rgba(255,255,255,.78);border:1px solid var(--line);box-shadow:0 8px 24px rgba(81,50,33,.08)}
+        .lang-switch button{min-width:86px;padding:8px 12px;border:none;border-radius:999px;background:transparent;color:var(--muted);font-weight:700;cursor:pointer}
+        .lang-switch button.active{background:var(--accent-deep);color:#fff8f3}
+        .hero,.panel{background:var(--surface);border-radius:24px;border:1px solid rgba(255,255,255,.55);box-shadow:var(--shadow)}
+        .hero{padding:30px 32px;margin-bottom:22px;color:#fff8f3;background:linear-gradient(135deg,rgba(95,48,29,.95),rgba(142,74,45,.88)),linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0))}
+        .hero h1{margin:0 0 10px;font-size:clamp(28px,4vw,42px)}
+        .hero p{margin:0;max-width:900px;line-height:1.8;color:rgba(255,248,243,.9)}
+        .hero-actions{margin-top:18px}
+        .btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:14px;border:1px solid transparent;font-size:14px;font-weight:700;cursor:pointer;transition:transform .18s ease}
+        .btn:hover{transform:translateY(-1px)}
+        .btn-primary{background:#fff2e6;color:var(--accent-deep)}
+        .btn-secondary{background:rgba(255,255,255,.08);color:#fff8f3;border-color:rgba(255,255,255,.2)}
+        .btn-panel{background:#fff;color:var(--accent-deep);border-color:rgba(142,74,45,.14)}
+        .btn-ghost{background:rgba(142,74,45,.08);color:var(--accent-deep);border-color:rgba(142,74,45,.12)}
+        .btn-danger{background:#fff2ed;color:var(--danger);border-color:rgba(180,76,46,.18)}
+        .layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:22px;align-items:start}
+        .stack{display:grid;gap:22px}
+        .panel-body{padding:24px}
+        .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:22px}
+        .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+        .metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+        .metric,.detail-stat,.tip,.status-box,.empty,.tree-shell,.branch-detail,.person-card,.task-card{border-radius:18px;border:1px solid var(--line);background:var(--surface-soft)}
+        .metric,.detail-stat,.person-card,.task-card{padding:14px}
+        .metric strong,.detail-stat strong{display:block;font-size:24px;line-height:1;margin-top:6px;color:var(--accent-deep)}
+        .field{display:grid;gap:8px}
+        .field label{font-size:13px;font-weight:700;color:var(--muted)}
+        .field input,.field select,.field textarea{width:100%;min-height:42px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.94);color:var(--text);font:inherit}
+        .field textarea{min-height:96px;resize:vertical}
+        .muted,.intro,.subtle{color:var(--muted);line-height:1.7}
+        .intro{margin:0}
+        .status-box{padding:12px 14px;min-height:48px;line-height:1.6;color:var(--muted)}
+        .status-box.success{color:var(--success);border-color:rgba(47,125,74,.18);background:rgba(244,251,244,.98)}
+        .status-box.error{color:var(--danger);border-color:rgba(180,76,46,.22);background:rgba(255,244,242,.98)}
+        .tip{padding:12px 14px}
+        .empty{padding:22px 16px;text-align:center;color:var(--muted)}
+        .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(142,74,45,.12);color:var(--accent-deep);font-size:12px;font-weight:700}
+        .chip.current{background:rgba(142,74,45,.18)}
+        .tree-shell{padding:10px;max-height:720px;overflow:auto}
+        .tree-children{margin-left:18px;padding-left:12px;border-left:1px dashed rgba(142,74,45,.2)}
+        .tree-row{padding:10px 12px;border-radius:16px;background:rgba(255,251,246,.94);border:1px solid transparent;margin-bottom:8px;align-items:flex-start}
+        .tree-row.active{background:rgba(142,74,45,.12);border-color:rgba(142,74,45,.18);box-shadow:0 10px 22px rgba(142,74,45,.08)}
+        .tree-main{display:grid;gap:8px;min-width:0}
+        .tree-main strong{font-size:16px;color:var(--accent-deep)}
+        .detail-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+        .people-grid,.task-list{display:grid;gap:12px}
+        .people-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .person-card,.task-card{display:grid;gap:10px}
+        .hidden{display:none!important}
+        @media (max-width:1180px){.layout{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+        @media (max-width:880px){.metrics,.detail-stats,.grid3,.people-grid{grid-template-columns:1fr}}
+        @media (max-width:760px){.page{padding:16px 12px 30px}.hero{padding:24px 20px}.topbar{align-items:flex-start}.btn{width:100%}.hero-actions .btn,.actions .btn{width:100%}}
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="crumbs">
+            <a href="/" id="crumb-home">返回首页</a>
+            <span>/</span>
+            <a href="/people-admin.html" id="crumb-people">人物后台</a>
+            <span>/</span>
+            <span id="crumb-current">支系管理后台</span>
+        </div>
+        <div class="lang-switch">
+            <button id="lang-zh" type="button">中文</button>
+            <button id="lang-en" type="button">English</button>
+        </div>
+    </div>
+    <section class="hero">
+        <h1 id="hero-title">支系管理后台</h1>
+        <p id="hero-desc">把支系树、支系表单和支系待办收成一页正式后台，集中整理主支、房系、迁支脉络，并把人物挂接到正确支系。</p>
+        <div class="hero-actions">
+            <button class="btn btn-primary" type="button" id="hero-create-btn">新建支系</button>
+            <a class="btn btn-secondary" href="/people-admin.html" id="hero-people-btn">打开人物后台</a>
+            <a class="btn btn-secondary" href="/person-entry.html" id="hero-entry-btn">打开人物录入页</a>
+        </div>
+    </section>
+    <div class="layout">
+        <aside class="stack">
+            <section class="panel task-module-shell task-module-soft">
+                <div class="panel-body">
+                    <div class="task-module-head">
+                        <div>
+                            <h2 id="filter-title">筛选与概览</h2>
+                            <p class="task-module-intro" id="filter-intro">先选家谱，再按支系关键词聚焦当前工作范围。</p>
+                        </div>
+                    </div>
+                    <div class="metrics">
+                        <div class="metric"><span class="muted" id="metric-genealogy-label">当前家谱</span><strong id="metric-genealogy">-</strong></div>
+                        <div class="metric"><span class="muted" id="metric-branch-label">支系数量</span><strong id="metric-branch">0</strong></div>
+                        <div class="metric"><span class="muted" id="metric-people-label">当前支系人物</span><strong id="metric-people">0</strong></div>
+                        <div class="metric"><span class="muted" id="metric-unassigned-label">未分配支系</span><strong id="metric-unassigned">0</strong></div>
+                    </div>
+                    <div class="field"><label for="genealogyId" id="genealogy-label">当前家谱</label><select id="genealogyId"></select></div>
+                    <div class="field"><label for="branchSearch" id="search-label">支系搜索</label><input id="branchSearch" type="text" placeholder="按支系名称、祖源地或说明搜索"></div>
+                    <div class="tip" id="filter-tip">左侧会显示当前家谱下的支系树，右侧则承接支系详情、人物和编辑动作。</div>
+                    <div class="status-box hidden" id="pageStatus"></div>
+                </div>
+            </section>
+            <section class="panel task-module-shell task-module-soft">
+                <div class="panel-body">
+                    <div class="task-module-head">
+                        <div>
+                            <h2 id="task-title">支系待办</h2>
+                            <p class="task-module-intro" id="task-intro">优先处理未挂支系人物和人物过少的薄弱支系。</p>
+                        </div>
+                    </div>
+                    <div class="task-list" id="branchTaskList"></div>
+                </div>
+            </section>
+        </aside>
+        <div class="stack">
+            <section class="panel task-module-shell task-module-highlight">
+                <div class="panel-body"><div class="branch-detail" id="branchDetail"></div></div>
+            </section>
+            <div class="grid2">
+                <section class="panel task-module-shell task-module-soft">
+                    <div class="panel-body">
+                        <div class="task-module-head">
+                            <div>
+                                <h2 id="tree-title">支系树</h2>
+                                <p class="task-module-intro" id="tree-intro">从这里选择当前支系，快速切换查看和编辑上下文。</p>
+                            </div>
+                        </div>
+                        <div class="tree-shell" id="branchTree"></div>
+                    </div>
+                </section>
+                <section class="panel task-module-shell task-module-soft" id="branchFormPanel">
+                    <div class="panel-body">
+                        <div class="task-module-head">
+                            <div>
+                                <h2 id="form-title">支系表单</h2>
+                                <p class="task-module-intro" id="form-intro">新建、编辑或整理支系层级，并维护祖源地和说明。</p>
+                            </div>
+                        </div>
+                        <form id="branchForm" class="task-module-form">
+                            <input type="hidden" id="branchId">
+                            <div class="grid3">
+                                <div class="field"><label for="branchName" id="branch-name-label">支系名称</label><input id="branchName" type="text" required></div>
+                                <div class="field"><label for="branchParentId" id="branch-parent-label">上级支系</label><select id="branchParentId"></select></div>
+                                <div class="field"><label for="branchSortOrder" id="branch-sort-label">排序号</label><input id="branchSortOrder" type="number" min="0" step="1"></div>
+                            </div>
+                            <div class="grid2">
+                                <div class="field"><label for="branchOriginPlace" id="branch-origin-label">祖源地</label><input id="branchOriginPlace" type="text"></div>
+                                <div class="field"><label for="branchDescription" id="branch-description-label">支系说明</label><textarea id="branchDescription"></textarea></div>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-panel" type="submit" id="form-submit-btn">保存支系</button>
+                                <button class="btn btn-danger" type="button" id="form-delete-btn">删除支系</button>
+                                <button class="btn btn-ghost" type="button" id="form-reset-btn">新建支系</button>
+                            </div>
+                        </form>
+                        <div class="status-box" id="formStatus"></div>
+                    </div>
+                </section>
+            </div>
+            <section class="panel task-module-shell task-module-soft" id="branchPeoplePanel">
+                <div class="panel-body">
+                    <div class="task-module-head">
+                        <div>
+                            <h2 id="people-panel-title">支系人物</h2>
+                            <p class="task-module-intro" id="people-panel-intro">查看当前支系下的人物，并直接进入人物后台或人物详情页。</p>
+                        </div>
+                        <span class="chip current" id="people-panel-chip">人物 0</span>
+                    </div>
+                    <div class="people-grid" id="branchPeopleList"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+<script>
+const byId=id=>document.getElementById(id);
+const state={lang:localStorage.getItem("gm-lang")||"zh",genealogies:[],branches:[],people:[],selectedBranchId:null};
+const I18N={
+zh:{title:"支系管理后台",peopleAdmin:"人物后台",home:"返回首页",current:"支系管理后台",heroTitle:"支系管理后台",heroDesc:"把支系树、支系表单和支系待办收成一页正式后台，集中整理主支、房系、迁支脉络，并把人物挂接到正确支系。",heroCreate:"新建支系",heroPeople:"打开人物后台",heroEntry:"打开人物录入页",filterTitle:"筛选与概览",filterIntro:"先选家谱，再按支系关键词聚焦当前工作范围。",metricGenealogy:"当前家谱",metricBranch:"支系数量",metricPeople:"当前支系人物",metricUnassigned:"未分配支系",genealogyLabel:"当前家谱",searchLabel:"支系搜索",searchPlaceholder:"按支系名称、祖源地或说明搜索",filterTip:"左侧会显示当前家谱下的支系树，右侧则承接支系详情、人物和编辑动作。",taskTitle:"支系待办",taskIntro:"优先处理未挂支系人物和人物过少的薄弱支系。",treeTitle:"支系树",treeIntro:"从这里选择当前支系，快速切换查看和编辑上下文。",formTitle:"支系表单",formIntro:"新建、编辑或整理支系层级，并维护祖源地和说明。",peoplePanelTitle:"支系人物",peoplePanelIntro:"查看当前支系下的人物，并直接进入人物后台或人物详情页。",branchName:"支系名称",branchParent:"上级支系",branchSort:"排序号",branchOrigin:"祖源地",branchDescription:"支系说明",formSubmit:"保存支系",formDelete:"删除支系",formReset:"新建支系",rootBranch:"无上级支系",noSelected:"当前还没有选中支系。先从左侧支系树里选一个，或者直接新建一个主支系。",noTree:"当前筛选条件下还没有支系。",noPeople:"当前支系下还没有人物。",noTasks:"当前没有明显的支系待办。",peopleChip:"人物",detailPeople:"支系人物",detailChildren:"子支数量",detailParent:"上级支系",detailOrigin:"祖源地",detailSort:"排序号",detailId:"支系编号",detailEdit:"编辑支系",detailOpenPeople:"查看支系人物",detailPeopleAdmin:"进入人物后台",detailEntry:"在录入页查看",select:"选择",edit:"编辑",assign:"分配支系",openDetail:"进入人物详情",openPeopleAdmin:"进入人物后台",taskUnassigned:"未挂支系人物",taskWeak:"薄弱支系",taskUnassignedIntro:"这些人物还没有挂到具体支系，建议优先补齐。",taskWeakIntro:"这些支系当前人物较少，可以补核心人物或整理归属。",years:"生卒",generation:"世代",unknown:"未设置",loadFailed:"加载失败",saved:"支系已保存。",deleted:"支系已删除。",requiredGenealogy:"请先选择一个家谱。",requiredName:"请输入支系名称。",invalidSort:"排序号必须是 0 或更大的整数。",deleteBlockedPeople:"当前支系下还有人物，请先调整人物归属后再删除。",deleteBlockedChildren:"当前支系下还有子支系，请先整理层级后再删除。",confirmDelete:"确认删除这个支系吗？",focus:"当前聚焦支系：{name}",root:"主支",parent:"上级：{name}",reason:"当前工作区已对齐到支系上下文，可继续整理层级、挂接人物和补支系说明。",branchPeople:"人物 {count}",branchChildren:"子支 {count}",taskCount:"待分配 {count}",weakCount:"人数 {count}"},
+en:{title:"Branch Admin",peopleAdmin:"People Admin",home:"Home",current:"Branch Admin",heroTitle:"Branch Admin",heroDesc:"Bring the branch tree, branch form, and branch task queue into one formal admin page so branch structure and branch assignment work happen in one place.",heroCreate:"New Branch",heroPeople:"Open People Admin",heroEntry:"Open Person Entry",filterTitle:"Filters and Overview",filterIntro:"Pick a genealogy first, then narrow the current work by branch search.",metricGenealogy:"Active Genealogy",metricBranch:"Branch Count",metricPeople:"People in Branch",metricUnassigned:"Unassigned People",genealogyLabel:"Active Genealogy",searchLabel:"Branch Search",searchPlaceholder:"Search by branch name, origin place, or note",filterTip:"The left side keeps the branch tree in view while the right side carries branch detail, people, and edit actions.",taskTitle:"Branch Tasks",taskIntro:"Prioritize people without a branch and branches that still look thin.",treeTitle:"Branch Tree",treeIntro:"Select a branch here to switch the working context quickly.",formTitle:"Branch Form",formIntro:"Create, edit, and organize branch hierarchy while keeping origin and notes up to date.",peoplePanelTitle:"People in Branch",peoplePanelIntro:"Review the people under the current branch and jump straight into people admin or detail editing.",branchName:"Branch Name",branchParent:"Parent Branch",branchSort:"Sort Order",branchOrigin:"Origin Place",branchDescription:"Branch Description",formSubmit:"Save Branch",formDelete:"Delete Branch",formReset:"New Branch",rootBranch:"No parent branch",noSelected:"No branch is selected yet. Choose one from the tree or start a new root branch.",noTree:"No branches match the current filter.",noPeople:"There are no people under the current branch yet.",noTasks:"No obvious branch-related tasks were detected.",peopleChip:"People",detailPeople:"People",detailChildren:"Children",detailParent:"Parent",detailOrigin:"Origin",detailSort:"Sort",detailId:"Branch ID",detailEdit:"Edit Branch",detailOpenPeople:"View Branch People",detailPeopleAdmin:"Open People Admin",detailEntry:"Open in Entry",select:"Select",edit:"Edit",assign:"Assign Branch",openDetail:"Open Detail",openPeopleAdmin:"Open People Admin",taskUnassigned:"People Without Branch",taskWeak:"Weak Branches",taskUnassignedIntro:"These people still have no branch and should be assigned soon.",taskWeakIntro:"These branches still need core people or clearer placement.",years:"Years",generation:"Generation",unknown:"Not set",loadFailed:"Load failed",saved:"Branch saved.",deleted:"Branch deleted.",requiredGenealogy:"Please select a genealogy first.",requiredName:"Please enter a branch name.",invalidSort:"Sort order must be an integer greater than or equal to 0.",deleteBlockedPeople:"This branch still has people. Reassign them before deleting the branch.",deleteBlockedChildren:"This branch still has child branches. Clear the hierarchy first.",confirmDelete:"Delete this branch?",focus:"Current branch focus: {name}",root:"Root branch",parent:"Parent: {name}",reason:"The current work area is aligned to branch context, so you can continue hierarchy cleanup, people assignment, and branch notes here.",branchPeople:"People {count}",branchChildren:"Children {count}",taskCount:"Pending {count}",weakCount:"Count {count}"}};
+const t=key=>I18N[state.lang==="en"?"en":"zh"][key]||key;
+const fill=(key,params={})=>Object.entries(params).reduce((text,[name,value])=>text.replaceAll(`{${name}}`,String(value??"")),t(key));
+const escapeHtml=value=>String(value??"").replace(/[&<>\"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]));
+const query=name=>new URLSearchParams(window.location.search).get(name);
+const getGenealogyId=()=>byId("genealogyId").value?Number(byId("genealogyId").value):null;
+const apiGet=async url=>{const res=await fetch(url);if(!res.ok)throw new Error(res.statusText||"Request failed");return res.json();};
+const apiSend=async (url,method,body)=>{const res=await fetch(url,{method,headers:{"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});const data=await res.json().catch(()=>({}));if(!res.ok||(data.code&&data.code!==0))throw new Error(data.message||res.statusText||"Request failed");return data;};
+const genealogyName=id=>state.genealogies.find(item=>String(item.id)===String(id))?.name||t("unknown");
+const branchName=id=>state.branches.find(item=>String(item.id)===String(id))?.name||t("unknown");
+const peopleForBranch=id=>state.people.filter(item=>String(item.branchId||"")===String(id)).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));
+const childrenForBranch=id=>state.branches.filter(item=>String(item.parentId||"")===String(id));
+const formatYears=person=>`${person.birthYear||person.birthDate||"-"} - ${person.deathYear||person.deathDate||"-"}`;
+function activeBranches(){const gid=getGenealogyId();const keyword=byId("branchSearch").value.trim().toLowerCase();return state.branches.filter(branch=>{if(gid&&Number(branch.genealogyId)!==gid)return false;if(!keyword)return true;return [branch.name,branch.originPlace,branch.description].filter(Boolean).some(text=>String(text).toLowerCase().includes(keyword));}).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)||String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));}
+function selectedBranch(){const branches=activeBranches();if(!branches.length)return null;const matched=branches.find(item=>String(item.id)===String(state.selectedBranchId));if(matched)return matched;state.selectedBranchId=branches[0].id;return branches[0];}
+function setPageStatus(message,type=""){const box=byId("pageStatus");box.textContent=message||"";box.className=`status-box${message?"":" hidden"}${type?` ${type}`:""}`;}
+function setFormStatus(message,type=""){const box=byId("formStatus");box.textContent=message||"";box.className=`status-box${type?` ${type}`:""}`;}
+function personEntryHref(personId, reason){const person=state.people.find(item=>String(item.id)===String(personId));const params=new URLSearchParams();if(personId)params.set("personId",String(personId));if(person?.genealogyId)params.set("genealogyId",String(person.genealogyId));if(person?.branchId)params.set("branchId",String(person.branchId));params.set("source","branch-admin");if(reason)params.set("focusReason",reason);return `/person-entry.html?${params.toString()}`;}
+function peopleAdminHref(branchId){const branch=state.branches.find(item=>String(item.id)===String(branchId));const params=new URLSearchParams();if(branch?.genealogyId)params.set("genealogyId",String(branch.genealogyId));if(branchId)params.set("branchId",String(branchId));params.set("source","branch-admin");params.set("focusReason",state.lang==="en"?"Branch Context":"支系上下文");return `/people-admin.html?${params.toString()}`;}
+function entryBranchHref(branchId){const branch=state.branches.find(item=>String(item.id)===String(branchId));const params=new URLSearchParams();if(branch?.genealogyId)params.set("genealogyId",String(branch.genealogyId));if(branchId)params.set("branchId",String(branchId));params.set("source","branch-admin");params.set("focusReason",state.lang==="en"?"Branch Context":"支系上下文");return `/person-entry.html?${params.toString()}`;}
+function renderStatic(){document.documentElement.lang=state.lang==="en"?"en":"zh-CN";document.title=t("title");byId("crumb-home").textContent=t("home");byId("crumb-people").textContent=t("peopleAdmin");byId("crumb-current").textContent=t("current");byId("hero-title").textContent=t("heroTitle");byId("hero-desc").textContent=t("heroDesc");byId("hero-create-btn").textContent=t("heroCreate");byId("hero-people-btn").textContent=t("heroPeople");byId("hero-entry-btn").textContent=t("heroEntry");byId("filter-title").textContent=t("filterTitle");byId("filter-intro").textContent=t("filterIntro");byId("metric-genealogy-label").textContent=t("metricGenealogy");byId("metric-branch-label").textContent=t("metricBranch");byId("metric-people-label").textContent=t("metricPeople");byId("metric-unassigned-label").textContent=t("metricUnassigned");byId("genealogy-label").textContent=t("genealogyLabel");byId("search-label").textContent=t("searchLabel");byId("branchSearch").placeholder=t("searchPlaceholder");byId("filter-tip").textContent=t("filterTip");byId("task-title").textContent=t("taskTitle");byId("task-intro").textContent=t("taskIntro");byId("tree-title").textContent=t("treeTitle");byId("tree-intro").textContent=t("treeIntro");byId("form-title").textContent=t("formTitle");byId("form-intro").textContent=t("formIntro");byId("people-panel-title").textContent=t("peoplePanelTitle");byId("people-panel-intro").textContent=t("peoplePanelIntro");byId("branch-name-label").textContent=t("branchName");byId("branch-parent-label").textContent=t("branchParent");byId("branch-sort-label").textContent=t("branchSort");byId("branch-origin-label").textContent=t("branchOrigin");byId("branch-description-label").textContent=t("branchDescription");byId("form-submit-btn").textContent=t("formSubmit");byId("form-delete-btn").textContent=t("formDelete");byId("form-reset-btn").textContent=t("formReset");byId("lang-zh").classList.toggle("active",state.lang==="zh");byId("lang-en").classList.toggle("active",state.lang==="en");}
+function renderGenealogyOptions(){const select=byId("genealogyId");const current=select.value||query("genealogyId")||"";select.innerHTML=state.genealogies.map(item=>`<option value="${item.id}">${escapeHtml(item.name||t("unknown"))}</option>`).join("");if(current&&state.genealogies.some(item=>String(item.id)===String(current))){select.value=String(current);}else if(state.genealogies[0]){select.value=String(state.genealogies[0].id);}}
+function renderParentOptions(){const select=byId("branchParentId");const currentBranchId=byId("branchId").value;const gid=getGenealogyId();const branches=state.branches.filter(item=>!gid||Number(item.genealogyId)===gid).filter(item=>!currentBranchId||String(item.id)!==String(currentBranchId)).sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)||String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));const current=select.value;select.innerHTML=[`<option value="">${escapeHtml(t("rootBranch"))}</option>`].concat(branches.map(item=>`<option value="${item.id}">${escapeHtml(item.name||t("unknown"))}</option>`)).join("");if(current&&branches.some(item=>String(item.id)===String(current)))select.value=current;}
+function renderMetrics(){const gid=getGenealogyId();const branch=selectedBranch();const unassigned=state.people.filter(person=>(!gid||Number(person.genealogyId)===gid)&&!person.branchId);byId("metric-genealogy").textContent=gid?genealogyName(gid):"-";byId("metric-branch").textContent=String(activeBranches().length);byId("metric-people").textContent=String(branch?peopleForBranch(branch.id).length:0);byId("metric-unassigned").textContent=String(unassigned.length);byId("people-panel-chip").textContent=`${t("peopleChip")} ${branch?peopleForBranch(branch.id).length:0}`;}
+function buildChildMap(branches){const map=new Map();const ids=new Set(branches.map(item=>String(item.id)));branches.forEach(branch=>{const key=branch.parentId&&ids.has(String(branch.parentId))?String(branch.parentId):"root";if(!map.has(key))map.set(key,[]);map.get(key).push(branch);});map.forEach(list=>list.sort((a,b)=>Number(a.sortOrder||0)-Number(b.sortOrder||0)||String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN")));return map;}
+function renderTreeNode(branch,map){const children=map.get(String(branch.id))||[];const peopleCount=peopleForBranch(branch.id).length;const parentText=branch.parentId?fill("parent",{name:branchName(branch.parentId)}):t("root");return `<div><div class="tree-row${String(state.selectedBranchId)===String(branch.id)?" active":""}"><div class="tree-main"><strong>${escapeHtml(branch.name||t("unknown"))}</strong><div class="chip-row"><span class="chip">${escapeHtml(fill("branchPeople",{count:peopleCount}))}</span><span class="chip">${escapeHtml(fill("branchChildren",{count:children.length}))}</span><span class="chip">${escapeHtml(parentText)}</span></div>${branch.originPlace?`<div class="subtle">${escapeHtml(branch.originPlace)}</div>`:""}</div><div class="actions"><button class="btn btn-ghost" type="button" onclick="selectBranch(${branch.id})">${escapeHtml(t("select"))}</button><button class="btn btn-panel" type="button" onclick="editBranch(${branch.id})">${escapeHtml(t("edit"))}</button></div></div>${children.length?`<div class="tree-children">${children.map(child=>renderTreeNode(child,map)).join("")}</div>`:""}</div>`;}
+function renderTree(){const host=byId("branchTree");const branches=activeBranches();if(!branches.length){host.innerHTML=`<div class="empty">${escapeHtml(t("noTree"))}</div>`;return;}const map=buildChildMap(branches);host.innerHTML=(map.get("root")||[]).map(branch=>renderTreeNode(branch,map)).join("");}
+function renderDetail(){const branch=selectedBranch();const host=byId("branchDetail");if(!branch){host.innerHTML=`<h2>${escapeHtml(t("title"))}</h2><p class="intro">${escapeHtml(t("noSelected"))}</p><div class="actions"><button class="btn btn-primary" type="button" onclick="startNewBranch()">${escapeHtml(t("heroCreate"))}</button></div>`;return;}const peopleCount=peopleForBranch(branch.id).length;const childrenCount=childrenForBranch(branch.id).length;const parentLabel=branch.parentId?branchName(branch.parentId):t("rootBranch");host.innerHTML=`<div class="task-module-head"><div><h2>${escapeHtml(branch.name||t("unknown"))}</h2><p class="task-module-intro">${escapeHtml(t("reason"))}</p></div><span class="chip current">${escapeHtml(fill("focus",{name:branch.name||t("unknown")}))}</span></div><div class="chip-row"><span class="chip">${escapeHtml(`${t("detailParent")} · ${parentLabel}`)}</span><span class="chip">${escapeHtml(`${t("detailOrigin")} · ${branch.originPlace||t("unknown")}`)}</span><span class="chip">${escapeHtml(`${t("detailSort")} · ${branch.sortOrder??0}`)}</span></div><div class="detail-stats"><div class="detail-stat"><span class="muted">${escapeHtml(t("detailPeople"))}</span><strong>${peopleCount}</strong></div><div class="detail-stat"><span class="muted">${escapeHtml(t("detailChildren"))}</span><strong>${childrenCount}</strong></div><div class="detail-stat"><span class="muted">${escapeHtml(t("detailId"))}</span><strong>${escapeHtml(String(branch.id))}</strong></div></div>${branch.description?`<div class="tip">${escapeHtml(branch.description)}</div>`:""}<div class="actions"><button class="btn btn-primary" type="button" onclick="editBranch(${branch.id})">${escapeHtml(t("detailEdit"))}</button><button class="btn btn-panel" type="button" onclick="focusBranchPeople()">${escapeHtml(t("detailOpenPeople"))}</button><a class="btn btn-panel" href="${peopleAdminHref(branch.id)}">${escapeHtml(t("detailPeopleAdmin"))}</a><a class="btn btn-ghost" href="${entryBranchHref(branch.id)}">${escapeHtml(t("detailEntry"))}</a></div>`;}
+function renderPeople(){const host=byId("branchPeopleList");const branch=selectedBranch();if(!branch){host.innerHTML=`<div class="empty">${escapeHtml(t("noSelected"))}</div>`;return;}const people=peopleForBranch(branch.id);if(!people.length){host.innerHTML=`<div class="empty">${escapeHtml(t("noPeople"))}</div>`;return;}host.innerHTML=people.map(person=>`<article class="person-card"><div class="task-module-head"><div><strong>${escapeHtml(person.name||t("unknown"))}</strong><p class="task-module-intro">${escapeHtml(`${t("years")} · ${formatYears(person)}`)}</p></div><span class="chip">${escapeHtml(`${t("generation")} · ${person.generationNo??person.generation??"-"}`)}</span></div><div class="meta">${person.title?`<span class="chip">${escapeHtml(person.title)}</span>`:""}${person.occupation?`<span class="chip">${escapeHtml(person.occupation)}</span>`:""}${person.source?`<span class="chip">${escapeHtml(person.source)}</span>`:""}</div>${person.biographySummary?`<div class="tip">${escapeHtml(person.biographySummary)}</div>`:""}<div class="actions"><a class="btn btn-primary" href="${personEntryHref(person.id,state.lang==="en"?"Branch Context":"支系上下文")}">${escapeHtml(t("openDetail"))}</a><a class="btn btn-panel" href="/people-admin.html?genealogyId=${person.genealogyId}&branchId=${person.branchId||""}&personId=${person.id}&source=branch-admin&focusReason=${encodeURIComponent(state.lang==="en"?"Branch Context":"支系上下文")}">${escapeHtml(t("openPeopleAdmin"))}</a></div></article>`).join("");}
+function renderTasks(){const host=byId("branchTaskList");const gid=getGenealogyId();const unassigned=state.people.filter(person=>(!gid||Number(person.genealogyId)===gid)&&!person.branchId).slice(0,4);const weak=activeBranches().map(branch=>({branch,count:peopleForBranch(branch.id).length})).filter(item=>item.count<=1).slice(0,4);if(!unassigned.length&&!weak.length){host.innerHTML=`<div class="empty">${escapeHtml(t("noTasks"))}</div>`;return;}host.innerHTML=[unassigned.length?`<article class="task-card"><div class="task-module-head"><div><h3>${escapeHtml(t("taskUnassigned"))}</h3><p class="task-module-intro">${escapeHtml(t("taskUnassignedIntro"))}</p></div><span class="chip">${escapeHtml(fill("taskCount",{count:unassigned.length}))}</span></div>${unassigned.map(person=>`<div class="tip"><strong>${escapeHtml(person.name||t("unknown"))}</strong><div class="meta"><span class="chip">${escapeHtml(`${t("years")} · ${formatYears(person)}`)}</span></div><div class="actions"><a class="btn btn-primary" href="${personEntryHref(person.id,state.lang==="en"?"Assign Branch":"分配支系")}">${escapeHtml(t("assign"))}</a><a class="btn btn-panel" href="/people-admin.html?genealogyId=${person.genealogyId}&personId=${person.id}&source=branch-admin&focusReason=${encodeURIComponent(state.lang==="en"?"Assign Branch":"分配支系")}">${escapeHtml(t("openPeopleAdmin"))}</a></div></div>`).join("")}</article>`:"",weak.length?`<article class="task-card"><div class="task-module-head"><div><h3>${escapeHtml(t("taskWeak"))}</h3><p class="task-module-intro">${escapeHtml(t("taskWeakIntro"))}</p></div></div>${weak.map(item=>`<div class="tip"><strong>${escapeHtml(item.branch.name||t("unknown"))}</strong><div class="meta"><span class="chip">${escapeHtml(fill("weakCount",{count:item.count}))}</span>${item.branch.originPlace?`<span class="chip">${escapeHtml(item.branch.originPlace)}</span>`:""}</div><div class="actions"><button class="btn btn-primary" type="button" onclick="selectBranch(${item.branch.id}, true)">${escapeHtml(t("detailOpenPeople"))}</button><a class="btn btn-panel" href="${peopleAdminHref(item.branch.id)}">${escapeHtml(t("detailPeopleAdmin"))}</a></div></div>`).join("")}</article>`:""].join("");}
+function renderAll(){renderStatic();renderGenealogyOptions();renderParentOptions();renderMetrics();renderTree();renderDetail();renderPeople();renderTasks();const params=new URLSearchParams();const gid=getGenealogyId();if(gid)params.set("genealogyId",String(gid));if(state.selectedBranchId)params.set("branchId",String(state.selectedBranchId));const keyword=byId("branchSearch").value.trim();if(keyword)params.set("keyword",keyword);window.history.replaceState({}, "", `${window.location.pathname}${params.toString()?`?${params.toString()}`:""}`);}
+function fillForm(branch){byId("branchId").value=branch?.id?String(branch.id):"";byId("branchName").value=branch?.name||"";byId("branchSortOrder").value=branch?.sortOrder??0;byId("branchOriginPlace").value=branch?.originPlace||"";byId("branchDescription").value=branch?.description||"";renderParentOptions();byId("branchParentId").value=branch?.parentId?String(branch.parentId):"";}
+function startNewBranch(){byId("branchForm").reset();byId("branchId").value="";byId("branchSortOrder").value="0";renderParentOptions();setFormStatus("","");byId("branchFormPanel").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>byId("branchName").focus(),120);}
+function focusBranchPeople(){byId("branchPeoplePanel").scrollIntoView({behavior:"smooth",block:"start"});}
+function selectBranch(id, focusPeople=false){state.selectedBranchId=Number(id);renderAll();if(focusPeople)setTimeout(focusBranchPeople,100);}
+function editBranch(id){const branch=state.branches.find(item=>String(item.id)===String(id));if(!branch)return;state.selectedBranchId=branch.id;renderAll();fillForm(branch);byId("branchFormPanel").scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>byId("branchName").focus(),120);}
+async function saveBranch(event){event.preventDefault();const gid=getGenealogyId();if(!gid){setFormStatus(t("requiredGenealogy"),"error");return;}const name=byId("branchName").value.trim();if(!name){setFormStatus(t("requiredName"),"error");return;}const sort=byId("branchSortOrder").value.trim();if(sort&&!/^\d+$/.test(sort)){setFormStatus(t("invalidSort"),"error");return;}const branchId=byId("branchId").value;const body={genealogyId:gid,name,parentId:byId("branchParentId").value||null,sortOrder:sort?Number(sort):0,originPlace:byId("branchOriginPlace").value.trim()||null,description:byId("branchDescription").value.trim()||null};try{const result=await apiSend(branchId?`/api/branch/${branchId}`:"/api/branch",branchId?"PUT":"POST",body);setFormStatus(t("saved"),"success");await refreshData();state.selectedBranchId=result?.data?.id||state.selectedBranchId;renderAll();if(result?.data)fillForm(result.data);}catch(error){setFormStatus(error.message||t("loadFailed"),"error");}}
+async function deleteBranch(){const branchId=byId("branchId").value||state.selectedBranchId;if(!branchId){setFormStatus(t("noSelected"),"error");return;}const branch=state.branches.find(item=>String(item.id)===String(branchId));if(!branch)return;if(peopleForBranch(branch.id).length){setFormStatus(t("deleteBlockedPeople"),"error");return;}if(childrenForBranch(branch.id).length){setFormStatus(t("deleteBlockedChildren"),"error");return;}if(!window.confirm(t("confirmDelete")))return;try{await apiSend(`/api/branch/${branch.id}`,"DELETE");setFormStatus(t("deleted"),"success");const next=activeBranches().filter(item=>String(item.id)!==String(branch.id))[0];state.selectedBranchId=next?.id||null;await refreshData();renderAll();startNewBranch();}catch(error){setFormStatus(error.message||t("loadFailed"),"error");}}
+async function refreshData(){const [genealogies,branches,people]=await Promise.all([apiGet("/api/genealogy/all"),apiGet("/api/branch/all"),apiGet("/api/person/all")]);state.genealogies=genealogies.data||[];state.branches=branches.data||[];state.people=people.data||[];}
+window.selectBranch=selectBranch;window.editBranch=editBranch;window.startNewBranch=startNewBranch;window.focusBranchPeople=focusBranchPeople;
+byId("lang-zh").onclick=()=>{state.lang="zh";localStorage.setItem("gm-lang","zh");renderAll();};
+byId("lang-en").onclick=()=>{state.lang="en";localStorage.setItem("gm-lang","en");renderAll();};
+byId("genealogyId").onchange=()=>{state.selectedBranchId=null;startNewBranch();renderAll();};
+byId("branchSearch").oninput=()=>renderAll();
+byId("hero-create-btn").onclick=startNewBranch;
+byId("form-reset-btn").onclick=startNewBranch;
+byId("form-delete-btn").onclick=deleteBranch;
+byId("branchForm").onsubmit=saveBranch;
+(async function init(){try{renderStatic();await refreshData();renderGenealogyOptions();const qGenealogy=query("genealogyId");if(qGenealogy&&state.genealogies.some(item=>String(item.id)===String(qGenealogy)))byId("genealogyId").value=String(qGenealogy);const qKeyword=query("keyword");if(qKeyword)byId("branchSearch").value=qKeyword;const qBranch=query("branchId");if(qBranch)state.selectedBranchId=Number(qBranch);renderAll();setFormStatus("","");const branch=selectedBranch();if(branch)fillForm(branch);else startNewBranch();}catch(error){setPageStatus(`${t("loadFailed")}: ${error.message}`,"error");}})();
+</script>
+</body>
+</html>

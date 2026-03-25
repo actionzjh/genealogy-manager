@@ -50,7 +50,7 @@ public class EuropeanFiveGenLayoutStrategy implements PdfLayoutStrategy {
             int startGen = (page - 1) * 5 + 1;
             int endGen = Math.min(startGen + 4, maxGen);
             addFiveGenPage(document, allPersons, startGen, endGen, font);
-            document.newPage();
+            document.getPdfDocument().addNewPage();
         }
 
         // 添加统计页
@@ -124,7 +124,7 @@ public class EuropeanFiveGenLayoutStrategy implements PdfLayoutStrategy {
                 .setFontColor(ColorConstants.GRAY);
         document.add(footer);
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**
@@ -150,7 +150,7 @@ public class EuropeanFiveGenLayoutStrategy implements PdfLayoutStrategy {
             document.add(new Paragraph("\n"));
         }
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**

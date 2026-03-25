@@ -32,23 +32,17 @@ import java.util.Map;
 public class PagodaLayoutStrategy implements PdfLayoutStrategy {
 
     @Override
-    public String getLayoutName() {
+    public String getName() {
         return "苏式宝塔式";
     }
 
     @Override
-    public String getLayoutDescription() {
+    public String getDescription() {
         return "传统宝塔式排版，始祖在上，逐代分支向下排列，适合家谱印刷";
     }
 
     @Override
-    public void generatePdf(Genealogy genealogy, List<Person> allPersons, OutputStream outputStream) throws Exception {
-        PdfWriter writer = new PdfWriter(outputStream);
-        PdfDocument pdfDoc = new PdfDocument(writer);
-        Document document = new Document(pdfDoc);
-
-        // 使用中文字体
-        PdfFont font = PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H", true);
+    public void layout(Document document, Genealogy genealogy, List<Person> allPersons, PdfFont font) throws Exception {
 
         // 标题页
         addTitlePage(document, font, genealogy);
@@ -103,7 +97,7 @@ public class PagodaLayoutStrategy implements PdfLayoutStrategy {
             document.add(desc);
         }
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     private Map<Long, List<Person>> buildChildrenMap(List<Person> allPersons) {
@@ -150,7 +144,7 @@ public class PagodaLayoutStrategy implements PdfLayoutStrategy {
 
             // 每页最多放5代
             if (gen % 5 == 0 && gen != maxGen) {
-                document.newPage();
+                document.getPdfDocument().addNewPage();
             }
         }
     }
@@ -193,7 +187,7 @@ public class PagodaLayoutStrategy implements PdfLayoutStrategy {
     }
 
     private void addStatsPage(Document document, PdfFont font, Genealogy genealogy, int totalPersons, int maxGen) throws Exception {
-        document.newPage();
+        document.getPdfDocument().addNewPage();
 
         Paragraph title = new Paragraph("统计信息")
                 .setFont(font)

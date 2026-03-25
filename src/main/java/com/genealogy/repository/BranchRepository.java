@@ -1,0 +1,15 @@
+package com.genealogy.repository;
+
+import com.genealogy.entity.Branch;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface BranchRepository extends JpaRepository<Branch, Long> {
+
+    List<Branch> findByGenealogyIdOrderBySortOrderAscIdAsc(Long genealogyId);
+
+    List<Branch> findByParentIdOrderBySortOrderAscIdAsc(Long parentId);
+
+    List<Branch> findByNameContainingIgnoreCase(String name);
+}

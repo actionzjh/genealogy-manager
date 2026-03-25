@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface PersonRepository extends JpaRepository<Person, Long> {
+public interface PersonRepository extends JpaRepository<Person, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Person> {
     
     /**
      * 根据姓名模糊搜索
@@ -37,7 +37,7 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
     /**
      * 获取最大世代数（某个家谱）
      */
-    @Query("SELECT MAX(p.generation) FROM Person p WHERE p.genealogyId = :genealogyId")
+    @Query("SELECT MAX(p.generation) FROM Person p WHERE :genealogyId IS NULL OR p.genealogyId = :genealogyId")
     Integer findMaxGeneration(@Param("genealogyId") Long genealogyId);
     
     /**

@@ -140,7 +140,7 @@ public class TableListLayoutStrategy implements PdfLayoutStrategy {
                 .setFontColor(ColorConstants.GRAY);
         document.add(footer);
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**
@@ -164,7 +164,7 @@ public class TableListLayoutStrategy implements PdfLayoutStrategy {
             document.add(new Paragraph("\n"));
         }
 
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**
@@ -230,7 +230,7 @@ public class TableListLayoutStrategy implements PdfLayoutStrategy {
         }
 
         document.add(table);
-        document.newPage();
+        document.getPdfDocument().addNewPage();
     }
 
     /**

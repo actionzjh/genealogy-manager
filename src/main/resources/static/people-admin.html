@@ -1,0 +1,3738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人物列表后台</title>
+    <style>
+        :root{
+            --bg:#f4efe6;
+            --panel:#fffdfa;
+            --panel-2:#f7f1e7;
+            --text:#2f2419;
+            --muted:#7a6752;
+            --line:#dfd1bc;
+            --primary:#8a4b24;
+            --primary-2:#b96d3b;
+            --danger:#b53d2e;
+            --shadow:0 18px 40px rgba(73,48,24,.12);
+        }
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+            color:var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(185,109,59,.16), transparent 28%),
+                linear-gradient(180deg, #fbf7f1 0%, var(--bg) 100%);
+            min-height:100vh;
+        }
+        a{color:inherit;text-decoration:none}
+        .topbar{
+            position:sticky;top:0;z-index:10;
+            display:flex;justify-content:space-between;align-items:center;
+            padding:16px 24px;
+            background:rgba(255,253,250,.92);
+            backdrop-filter:blur(10px);
+            border-bottom:1px solid rgba(138,75,36,.14);
+        }
+        .brand{display:flex;flex-direction:column;gap:4px}
+        .brand strong{font-size:18px}
+        .muted{color:var(--muted)}
+        .lang-switch,.actions,.filters,.summary,.list-head,.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .btn,.chip,select,input{
+            border-radius:999px;
+            border:1px solid var(--line);
+            background:#fff;
+            color:var(--text);
+            font:inherit;
+        }
+        .btn{
+            cursor:pointer;
+            padding:10px 16px;
+            transition:.2s ease;
+        }
+        .btn:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(73,48,24,.08)}
+        .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;border-color:transparent}
+        .btn-danger{background:#fff7f5;color:var(--danger);border-color:#efc8c1}
+        .btn.active,.chip.active{background:var(--panel-2);border-color:#c89d72;color:var(--primary)}
+        .chip{padding:8px 12px;display:inline-flex;align-items:center;gap:6px}
+        select,input{padding:10px 14px;min-height:44px}
+        main{padding:28px 24px 40px}
+        .hero{
+            background:linear-gradient(135deg, rgba(138,75,36,.96), rgba(70,48,30,.96));
+            color:#fff;
+            border-radius:28px;
+            padding:28px;
+            box-shadow:var(--shadow);
+            margin-bottom:22px;
+        }
+        .hero h1{margin:0 0 10px;font-size:34px}
+        .hero p{margin:0;max-width:780px;color:rgba(255,245,235,.88);line-height:1.6}
+        .layout{
+            display:grid;
+            grid-template-columns:320px minmax(0,1fr);
+            gap:20px;
+        }
+        .panel{
+            background:var(--panel);
+            border:1px solid rgba(138,75,36,.12);
+            border-radius:24px;
+            box-shadow:var(--shadow);
+        }
+        .panel-body{padding:22px}
+        .panel h2{margin:0 0 8px;font-size:22px}
+        .intro{margin:0 0 16px;color:var(--muted);line-height:1.6}
+        .metrics{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:12px;
+            margin-bottom:16px;
+        }
+        .metric{
+            background:var(--panel-2);
+            border:1px solid rgba(138,75,36,.08);
+            border-radius:18px;
+            padding:14px;
+        }
+        .metric strong{display:block;font-size:24px;margin-top:4px}
+        .filters{margin-bottom:16px}
+        .filters > *{flex:1 1 180px}
+        .list{display:grid;gap:14px}
+        .card{
+            border:1px solid rgba(138,75,36,.12);
+            border-radius:20px;
+            background:#fff;
+            padding:16px;
+            transition:.2s ease;
+        }
+        .card:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(73,48,24,.08)}
+        .card strong{font-size:18px}
+        .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;color:var(--muted)}
+        .empty,.tip,.status{
+            border-radius:16px;
+            padding:12px 14px;
+            background:var(--panel-2);
+            color:var(--muted);
+            border:1px dashed rgba(138,75,36,.14);
+        }
+        .status.error{background:#fff4f2;border-color:#efc8c1;color:#9c3327}
+        .status.success{background:#f4fbf4;border-color:#cce6cc;color:#2c6a3a}
+        .hidden{display:none!important}
+        @media (max-width:960px){
+            .layout{grid-template-columns:1fr}
+            .hero h1{font-size:28px}
+        }
+    </style>
+    <link rel="stylesheet" href="/task-module-pattern.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <strong id="brand-title">人物列表后台</strong>
+        <span class="muted" id="brand-subtitle">从这里进入正式的人物管理与详情编辑流程</span>
+    </div>
+    <div class="actions">
+        <a class="btn" href="/" id="home-link">返回首页</a>
+        <a class="btn" href="/person-entry.html" id="entry-link">打开录入台</a>
+        <a class="btn" href="/branch-admin.html" id="branch-admin-link">打开支系后台</a>
+        <button class="btn btn-primary" type="button" id="create-btn">新建人物</button>
+        <div class="lang-switch">
+            <button class="btn" type="button" id="lang-zh">中文</button>
+            <button class="btn" type="button" id="lang-en">English</button>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section class="hero">
+        <h1 id="hero-title">人物列表后台</h1>
+        <p id="hero-desc">这里是正式后台的第一步：集中查看人物、筛选支系、搜索目标成员，并直接进入人物详情与关系维护。</p>
+    </section>
+
+    <div class="layout">
+        <section class="panel">
+            <div class="panel-body">
+                <h2 id="sidebar-title">筛选与概览</h2>
+                <p class="intro" id="sidebar-intro">先选家谱，再按支系和关键字筛选目标人物。</p>
+
+                <div class="metrics">
+                    <div class="metric">
+                        <span class="muted" id="metric-genealogy-label">当前家谱</span>
+                        <strong id="metric-genealogy">-</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="muted" id="metric-people-label">人物数量</span>
+                        <strong id="metric-people">0</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="muted" id="metric-branch-label">支系数量</span>
+                        <strong id="metric-branch">0</strong>
+                    </div>
+                    <div class="metric">
+                        <span class="muted" id="metric-rel-label">关系数量</span>
+                        <strong id="metric-rel">0</strong>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <select id="genealogyId"></select>
+                    <select id="branchId"></select>
+                    <input id="keyword" type="text" placeholder="按姓名、字、号、职业搜索">
+                </div>
+
+                <div class="tip" id="filter-tip">当前优先展示符合筛选条件的人物，点击人物卡片可直达详情页。</div>
+                <div class="status hidden" id="status-box"></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-body">
+                <div class="list-head">
+                    <div>
+                        <h2 id="list-title">人物列表</h2>
+                        <p class="intro" id="list-intro">优先用这里查看人物全貌，再进入详情页做深度编辑与关系维护。</p>
+                    </div>
+                    <span class="chip"><span id="count-label">人物</span>: <strong id="count-value">0</strong></span>
+                </div>
+                <div class="list" id="people-list"></div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script>
+const byId=id=>document.getElementById(id);
+const state={lang:localStorage.getItem("gm-lang")||"zh",genealogies:[],branches:[],people:[],relations:[]};
+const I18N={
+zh:{
+title:"人物列表后台",
+subtitle:"从这里进入正式的人物管理与详情编辑流程",
+home:"返回首页",
+entry:"打开录入台",
+branchAdmin:"打开支系后台",
+create:"新建人物",
+heroTitle:"人物列表后台",
+heroDesc:"这里是正式后台的第一步：集中查看人物、筛选支系、搜索目标成员，并直接进入人物详情与关系维护。",
+sidebarTitle:"筛选与概览",
+sidebarIntro:"先选家谱，再按支系和关键字筛选目标人物。",
+metricGenealogy:"当前家谱",
+metricPeople:"人物数量",
+metricBranch:"支系数量",
+metricRel:"关系数量",
+listTitle:"人物列表",
+listIntro:"优先用这里查看人物全貌，再进入详情页做深度编辑与关系维护。",
+countLabel:"人物",
+filterTip:"当前优先展示符合筛选条件的人物，点击人物卡片可直达详情页。",
+allGenealogies:"请选择家谱",
+allBranches:"全部支系",
+empty:"当前筛选条件下还没有人物。",
+openDetail:"打开详情",
+openEntry:"在录入台编辑",
+newPerson:"新建人物",
+years:"生卒",
+branch:"支系",
+generation:"世代",
+loadFailed:"加载失败",
+unknown:"未设置"
+},
+en:{
+title:"People Admin",
+subtitle:"Use this page as the formal starting point for person management and detail editing.",
+home:"Home",
+entry:"Open Entry Console",
+branchAdmin:"Open Branch Admin",
+create:"New Person",
+heroTitle:"People Admin",
+heroDesc:"This is the first formal admin page: browse people centrally, filter by branch, search targets, and jump into person detail with relationship maintenance.",
+sidebarTitle:"Filters and Overview",
+sidebarIntro:"Select a genealogy first, then narrow the list by branch and keyword.",
+metricGenealogy:"Active Genealogy",
+metricPeople:"People Count",
+metricBranch:"Branch Count",
+metricRel:"Relation Count",
+listTitle:"People List",
+listIntro:"Use this page to understand the people set first, then enter detail pages for deeper edits and relationship work.",
+countLabel:"People",
+filterTip:"The list below prioritizes the current filter result. Open a card to jump straight into detail editing.",
+allGenealogies:"Select genealogy",
+allBranches:"All branches",
+empty:"No people match the current filters.",
+openDetail:"Open Detail",
+openEntry:"Edit in Entry Console",
+newPerson:"Create Person",
+years:"Years",
+branch:"Branch",
+generation:"Generation",
+loadFailed:"Load failed",
+unknown:"Not set"
+}
+};
+const t=key=>I18N[state.lang==="en"?"en":"zh"][key]||key;
+const setStatus=(message,type="")=>{const el=byId("status-box");el.textContent=message||"";el.className=`status${message?"":" hidden"}${type?` ${type}`:""}`;};
+async function apiGet(url){const res=await fetch(url);if(!res.ok)throw new Error(res.statusText||"Request failed");return res.json();}
+function branchName(id){return state.branches.find(item=>String(item.id)===String(id))?.name||t("unknown");}
+function genealogyName(id){return state.genealogies.find(item=>String(item.id)===String(id))?.name||t("unknown");}
+function filteredPeople(){
+    const gid=byId("genealogyId").value;
+    const bid=byId("branchId").value;
+    const keyword=byId("keyword").value.trim().toLowerCase();
+    return state.people.filter(item=>{
+        if(gid&&String(item.genealogyId)!==gid)return false;
+        if(bid&&String(item.branchId||"")!==bid)return false;
+        if(!keyword)return true;
+        return [item.name,item.courtesyName,item.artName,item.occupation].filter(Boolean).some(text=>String(text).toLowerCase().includes(keyword));
+    });
+}
+function renderFilters(){
+    const gidOptions=[`<option value="">${t("allGenealogies")}</option>`].concat(state.genealogies.map(item=>`<option value="${item.id}">${item.name}</option>`));
+    byId("genealogyId").innerHTML=gidOptions.join("");
+    const activeGid=state.genealogies[0]?.id?String(state.genealogies[0].id):"";
+    if(!byId("genealogyId").value&&activeGid)byId("genealogyId").value=activeGid;
+    const gid=byId("genealogyId").value;
+    const branchOptions=[`<option value="">${t("allBranches")}</option>`].concat(state.branches.filter(item=>!gid||String(item.genealogyId)===gid).map(item=>`<option value="${item.id}">${item.name}</option>`));
+    const prev=byId("branchId").value;
+    byId("branchId").innerHTML=branchOptions.join("");
+    if(branchOptions.some(opt=>opt.includes(`value="${prev}"`)))byId("branchId").value=prev;
+}
+function renderMetrics(){
+    const gid=byId("genealogyId").value;
+    const people=filteredPeople();
+    byId("metric-genealogy").textContent=gid?genealogyName(gid):t("unknown");
+    byId("metric-people").textContent=String(people.length);
+    byId("metric-branch").textContent=String(state.branches.filter(item=>!gid||String(item.genealogyId)===gid).length);
+    byId("metric-rel").textContent=String(state.relations.filter(item=>!gid||String(item.genealogyId)===gid).length);
+    byId("count-value").textContent=String(people.length);
+}
+function renderList(){
+    const list=byId("people-list");
+    const people=filteredPeople().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));
+    if(!people.length){list.innerHTML=`<div class="empty">${t("empty")}</div>`;return;}
+    list.innerHTML=people.map(person=>`
+        <div class="card">
+            <div class="list-head">
+                <div>
+                    <strong>${person.name||t("unknown")}</strong>
+                    <div class="meta">
+                        <span class="chip">#${person.id}</span>
+                        <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                        <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                    </div>
+                </div>
+                <div class="actions">
+                    <a class="btn btn-primary" href="/person-entry.html?personId=${person.id}">${t("openDetail")}</a>
+                    <a class="btn" href="/person-entry.html?personId=${person.id}">${t("openEntry")}</a>
+                </div>
+            </div>
+            <div class="meta">
+                <span>${t("years")}: ${person.birthYear||"-"} - ${person.deathYear||"-"}</span>
+                ${person.title?`<span>${person.title}</span>`:""}
+                ${person.occupation?`<span>${person.occupation}</span>`:""}
+            </div>
+            ${person.biographySummary?`<div class="tip">${person.biographySummary}</div>`:""}
+        </div>
+    `).join("");
+}
+function updateText(){
+    document.title=t("title");
+    byId("brand-title").textContent=t("title");
+    byId("brand-subtitle").textContent=t("subtitle");
+    byId("home-link").textContent=t("home");
+    byId("entry-link").textContent=t("entry");
+    byId("branch-admin-link").textContent=t("branchAdmin");
+    byId("create-btn").textContent=t("create");
+    byId("hero-title").textContent=t("heroTitle");
+    byId("hero-desc").textContent=t("heroDesc");
+    byId("sidebar-title").textContent=t("sidebarTitle");
+    byId("sidebar-intro").textContent=t("sidebarIntro");
+    byId("metric-genealogy-label").textContent=t("metricGenealogy");
+    byId("metric-people-label").textContent=t("metricPeople");
+    byId("metric-branch-label").textContent=t("metricBranch");
+    byId("metric-rel-label").textContent=t("metricRel");
+    byId("list-title").textContent=t("listTitle");
+    byId("list-intro").textContent=t("listIntro");
+    byId("count-label").textContent=t("countLabel");
+    byId("filter-tip").textContent=t("filterTip");
+    byId("keyword").placeholder=state.lang==="en"?"Search by name, courtesy name, art name, or occupation":"按姓名、字、号、职业搜索";
+    byId("lang-zh").classList.toggle("active",state.lang==="zh");
+    byId("lang-en").classList.toggle("active",state.lang==="en");
+}
+async function refresh(){
+    const [genealogies,branches,people,relations]=await Promise.all([
+        apiGet("/api/genealogy/all"),
+        apiGet("/api/branch/all"),
+        apiGet("/api/person/all"),
+        apiGet("/api/person-relation/all")
+    ]);
+    state.genealogies=genealogies.data||[];
+    state.branches=branches.data||[];
+    state.people=people.data||[];
+    state.relations=relations.data||[];
+    renderFilters();
+    renderMetrics();
+    renderList();
+}
+function rerender(){updateText();renderFilters();renderMetrics();renderList();}
+byId("lang-zh").onclick=()=>{state.lang="zh";localStorage.setItem("gm-lang","zh");rerender();};
+byId("lang-en").onclick=()=>{state.lang="en";localStorage.setItem("gm-lang","en");rerender();};
+byId("genealogyId").onchange=()=>{renderFilters();renderMetrics();renderList();};
+byId("branchId").onchange=()=>{renderMetrics();renderList();};
+byId("keyword").oninput=()=>{renderMetrics();renderList();};
+byId("create-btn").onclick=()=>{window.location.href="/person-entry.html";};
+updateText();
+refresh().catch(error=>setStatus(`${t("loadFailed")}: ${error.message}`,"error"));
+function peopleAdminExtraText(key){
+    const messages={
+        zh:{
+            resultsTitle:"当前筛选概览",
+            resultsIntro:"这一区会告诉你当前筛选正在聚焦哪一组人物，并给出最直接的下一步入口。",
+            activeGenealogy:"家谱",
+            activeBranch:"支系",
+            activeKeyword:"关键词",
+            all:"全部",
+            none:"未设置",
+            matched:"匹配人物",
+            featuredTitle:"优先查看",
+            featuredIntro:"优先打开这些人物，可以更快进入真实录入和关系维护。",
+            openDetail:"进入详情页",
+            openEntry:"在录入台编辑",
+            createHere:"从这里新建人物"
+        },
+        en:{
+            resultsTitle:"Current Filter Summary",
+            resultsIntro:"This block explains what the current filters focus on and gives the quickest next actions.",
+            activeGenealogy:"Genealogy",
+            activeBranch:"Branch",
+            activeKeyword:"Keyword",
+            all:"All",
+            none:"Not set",
+            matched:"Matched People",
+            featuredTitle:"Prioritized Profiles",
+            featuredIntro:"Open these people first to move faster into real editing and relationship work.",
+            openDetail:"Open Detail",
+            openEntry:"Edit in Entry Console",
+            createHere:"Create from Here"
+        }
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function ensurePeopleAdminExtras(){
+    let summary=byId("people-admin-summary");
+    const sidebar=byId("filter-tip")?.parentNode;
+    if(sidebar&&!summary){
+        summary=document.createElement("div");
+        summary.id="people-admin-summary";
+        summary.className="person-summary";
+        summary.style.marginTop="14px";
+        sidebar.appendChild(summary);
+    }
+    let featured=byId("people-admin-featured");
+    const listPanel=byId("people-list")?.parentNode;
+    if(listPanel&&!featured){
+        featured=document.createElement("div");
+        featured.id="people-admin-featured";
+        featured.className="person-summary";
+        featured.style.marginBottom="16px";
+        listPanel.insertBefore(featured,byId("people-list"));
+    }
+    return{summary,featured};
+}
+function currentFilterParams(){
+    const params=new URLSearchParams();
+    const gid=byId("genealogyId")?.value;
+    const bid=byId("branchId")?.value;
+    const keyword=byId("keyword")?.value?.trim();
+    if(gid)params.set("genealogyId",gid);
+    if(bid)params.set("branchId",bid);
+    if(keyword)params.set("keyword",keyword);
+    return params;
+}
+function personDetailHref(personId){
+    const params=currentFilterParams();
+    params.set("personId",personId);
+    return `/person-entry.html?${params.toString()}`;
+}
+function renderPeopleAdminSummary(){
+    const {summary}=ensurePeopleAdminExtras();
+    if(!summary)return;
+    const gid=byId("genealogyId")?.value;
+    const bid=byId("branchId")?.value;
+    const keyword=byId("keyword")?.value?.trim();
+    const people=filteredPeople();
+    summary.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminExtraText("resultsTitle")}</h3>
+                <p class="intro">${peopleAdminExtraText("resultsIntro")}</p>
+            </div>
+            <div class="actions">
+                <a class="btn btn-primary" href="/person-entry.html">${peopleAdminExtraText("createHere")}</a>
+            </div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+            <span class="chip">${peopleAdminExtraText("activeGenealogy")}: <strong>${gid?genealogyName(gid):peopleAdminExtraText("all")}</strong></span>
+            <span class="chip">${peopleAdminExtraText("activeBranch")}: <strong>${bid?branchName(bid):peopleAdminExtraText("all")}</strong></span>
+            <span class="chip">${peopleAdminExtraText("activeKeyword")}: <strong>${keyword||peopleAdminExtraText("none")}</strong></span>
+            <span class="chip">${peopleAdminExtraText("matched")}: <strong>${people.length}</strong></span>
+        </div>
+    `;
+}
+function renderPeopleAdminFeatured(){
+    const {featured}=ensurePeopleAdminExtras();
+    if(!featured)return;
+    const people=filteredPeople().slice().sort((a,b)=>{
+        const genA=Number(a.generationNo??a.generation??999);
+        const genB=Number(b.generationNo??b.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN");
+    }).slice(0,3);
+    if(!people.length){
+        featured.innerHTML="";
+        return;
+    }
+    featured.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminExtraText("featuredTitle")}</h3>
+                <p class="intro">${peopleAdminExtraText("featuredIntro")}</p>
+            </div>
+        </div>
+        ${people.map(person=>`
+            <div class="card" style="margin-top:10px;">
+                <div class="list-head">
+                    <div>
+                        <strong>${person.name||t("unknown")}</strong>
+                        <div class="meta">
+                            <span class="chip">#${person.id}</span>
+                            <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                            <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="${personDetailHref(person.id)}">${peopleAdminExtraText("openDetail")}</a>
+                        <a class="btn" href="${personDetailHref(person.id)}">${peopleAdminExtraText("openEntry")}</a>
+                    </div>
+                </div>
+            </div>
+        `).join("")}
+    `;
+}
+const __peopleAdminOriginalRenderList=renderList;
+renderList=function(){
+    __peopleAdminOriginalRenderList();
+    renderPeopleAdminFeatured();
+};
+const __peopleAdminOriginalRenderMetrics=renderMetrics;
+renderMetrics=function(){
+    __peopleAdminOriginalRenderMetrics();
+    renderPeopleAdminSummary();
+};
+const __peopleAdminOriginalUpdateText=updateText;
+updateText=function(){
+    __peopleAdminOriginalUpdateText();
+    renderPeopleAdminSummary();
+    renderPeopleAdminFeatured();
+};
+const __peopleAdminOriginalRefresh=refresh;
+refresh=async function(){
+    await __peopleAdminOriginalRefresh();
+    renderPeopleAdminSummary();
+    renderPeopleAdminFeatured();
+};
+function peopleAdminContextParams(){
+    const params=new URLSearchParams();
+    const gid=byId("genealogyId")?.value;
+    const bid=byId("branchId")?.value;
+    const keyword=byId("keyword")?.value?.trim();
+    if(gid)params.set("genealogyId",gid);
+    if(bid)params.set("branchId",bid);
+    if(keyword)params.set("keyword",keyword);
+    return params;
+}
+function peopleAdminEntryHref(personId=null){
+    const params=peopleAdminContextParams();
+    if(personId!==null&&personId!==undefined)params.set("personId",String(personId));
+    const query=params.toString();
+    return `/person-entry.html${query?`?${query}`:""}`;
+}
+function peopleAdminBranchHref(){
+    const query=peopleAdminContextParams().toString();
+    return `/branch-admin.html${query?`?${query}`:""}`;
+}
+function syncPeopleAdminActionLinks(){
+    const entryLink=byId("entry-link");
+    const branchAdminLink=byId("branch-admin-link");
+    const createBtn=byId("create-btn");
+    if(entryLink)entryLink.href=peopleAdminEntryHref();
+    if(branchAdminLink)branchAdminLink.href=peopleAdminBranchHref();
+    if(createBtn)createBtn.onclick=()=>{window.location.href=peopleAdminEntryHref();};
+}
+function applyPeopleAdminQueryParams(){
+    const params=new URLSearchParams(window.location.search);
+    const gid=params.get("genealogyId");
+    const bid=params.get("branchId");
+    const keyword=params.get("keyword");
+    if(gid&&byId("genealogyId"))byId("genealogyId").value=gid;
+    renderFilters();
+    if(bid&&byId("branchId"))byId("branchId").value=bid;
+    if(typeof keyword==="string"&&byId("keyword"))byId("keyword").value=keyword;
+    renderMetrics();
+    renderList();
+    syncPeopleAdminActionLinks();
+}
+const __peopleAdminOriginalRenderFilters=renderFilters;
+renderFilters=function(){
+    __peopleAdminOriginalRenderFilters();
+    syncPeopleAdminActionLinks();
+};
+const __peopleAdminOriginalRenderPeopleAdminSummary=renderPeopleAdminSummary;
+renderPeopleAdminSummary=function(){
+    __peopleAdminOriginalRenderPeopleAdminSummary();
+    syncPeopleAdminActionLinks();
+};
+const __peopleAdminOriginalPersonDetailHref=personDetailHref;
+personDetailHref=function(personId){
+    return peopleAdminEntryHref(personId);
+};
+function peopleAdminRelationText(key){
+    const messages={
+        zh:{
+            parents:"父母",
+            spouses:"配偶",
+            children:"子女",
+            father:"父亲",
+            mother:"母亲",
+            none:"未录入",
+            quickView:"关系摘要",
+            addFather:"补父亲",
+            addMother:"补母亲",
+            addSpouse:"补配偶",
+            reviewRelations:"查看关系"
+        },
+        en:{
+            parents:"Parents",
+            spouses:"Spouses",
+            children:"Children",
+            father:"Father",
+            mother:"Mother",
+            none:"Not entered",
+            quickView:"Relation Snapshot",
+            addFather:"Add Father",
+            addMother:"Add Mother",
+            addSpouse:"Add Spouse",
+            reviewRelations:"Review Relations"
+        }
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function personRelationActionHref(personId,mode=null){
+    const params=peopleAdminContextParams();
+    params.set("personId",String(personId));
+    params.set("panel","relation");
+    if(mode)params.set("quickRelation",mode);
+    return `/person-entry.html?${params.toString()}`;
+}
+function personRelationActionHrefWithReason(personId,mode=null,reason=null,source=null){
+    const params=peopleAdminContextParams();
+    params.set("personId",String(personId));
+    if(source)params.set("source",source);
+    if(reason)params.set("focusReason",reason);
+    if(mode){
+        params.set("panel","relation");
+        params.set("quickRelation",mode);
+    }
+    return `/person-entry.html?${params.toString()}`;
+}
+function peopleAdminRelationSnapshot(person){
+    const relations=state.relations.filter(item=>String(item.personId)===String(person.id));
+    const father=relations.find(item=>item.relationType==="FATHER");
+    const mother=relations.find(item=>item.relationType==="MOTHER");
+    const spouses=relations.filter(item=>item.relationType==="SPOUSE");
+    const children=state.relations.filter(item=>String(item.relatedPersonId)===String(person.id)&&(item.relationType==="FATHER"||item.relationType==="MOTHER"));
+    return{
+        fatherName:father?state.people.find(item=>String(item.id)===String(father.relatedPersonId))?.name||`#${father.relatedPersonId}`:null,
+        motherName:mother?state.people.find(item=>String(item.id)===String(mother.relatedPersonId))?.name||`#${mother.relatedPersonId}`:null,
+        spouseCount:spouses.length,
+        childCount:children.length
+    };
+}
+function renderPeopleAdminRelationMeta(person){
+    const snapshot=peopleAdminRelationSnapshot(person);
+    return `
+        <div class="meta" style="margin-top:8px;">
+            <span class="chip">${peopleAdminRelationText("father")}: ${snapshot.fatherName||peopleAdminRelationText("none")}</span>
+            <span class="chip">${peopleAdminRelationText("mother")}: ${snapshot.motherName||peopleAdminRelationText("none")}</span>
+            <span class="chip">${peopleAdminRelationText("spouses")}: ${snapshot.spouseCount}</span>
+            <span class="chip">${peopleAdminRelationText("children")}: ${snapshot.childCount}</span>
+        </div>
+        <div class="actions" style="margin-top:8px;">
+            ${!snapshot.fatherName?`<a class="btn btn-chip" href="${personRelationActionHref(person.id,"father")}">${peopleAdminRelationText("addFather")}</a>`:""}
+            ${!snapshot.motherName?`<a class="btn btn-chip" href="${personRelationActionHref(person.id,"mother")}">${peopleAdminRelationText("addMother")}</a>`:""}
+            ${snapshot.spouseCount===0?`<a class="btn btn-chip" href="${personRelationActionHref(person.id,"spouse")}">${peopleAdminRelationText("addSpouse")}</a>`:""}
+            <a class="btn btn-chip" href="${personRelationActionHref(person.id)}">${peopleAdminRelationText("reviewRelations")}</a>
+        </div>
+    `;
+}
+const __peopleAdminOriginalRenderListWithRelations=renderList;
+renderList=function(){
+    const list=byId("people-list");
+    const people=filteredPeople().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));
+    if(!people.length){
+        __peopleAdminOriginalRenderListWithRelations();
+        renderPeopleAdminFeatured();
+        return;
+    }
+    list.innerHTML=people.map(person=>`
+        <div class="card">
+            <div class="list-head">
+                <div>
+                    <strong>${person.name||t("unknown")}</strong>
+                    <div class="meta">
+                        <span class="chip">#${person.id}</span>
+                        <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                        <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                    </div>
+                    ${renderPeopleAdminRelationMeta(person)}
+                </div>
+                <div class="actions">
+                    <a class="btn btn-primary" href="${personDetailHref(person.id)}">${t("openDetail")}</a>
+                    <a class="btn" href="${personDetailHref(person.id)}">${t("openEntry")}</a>
+                </div>
+            </div>
+            <div class="meta">
+                <span>${t("years")}: ${person.birthYear||"-"} - ${person.deathYear||"-"}</span>
+                ${person.title?`<span>${person.title}</span>`:""}
+                ${person.occupation?`<span>${person.occupation}</span>`:""}
+            </div>
+            ${person.biographySummary?`<div class="tip">${person.biographySummary}</div>`:""}
+        </div>
+    `).join("");
+    byId("count-value").textContent=String(people.length);
+    renderPeopleAdminFeatured();
+};
+const __peopleAdminOriginalRenderFeaturedWithRelations=renderPeopleAdminFeatured;
+renderPeopleAdminFeatured=function(){
+    const {featured}=ensurePeopleAdminExtras();
+    if(!featured)return;
+    const people=filteredPeople().slice().sort((a,b)=>{
+        const genA=Number(a.generationNo??a.generation??999);
+        const genB=Number(b.generationNo??b.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN");
+    }).slice(0,3);
+    if(!people.length){
+        featured.innerHTML="";
+        return;
+    }
+    featured.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminExtraText("featuredTitle")}</h3>
+                <p class="intro">${peopleAdminExtraText("featuredIntro")}</p>
+            </div>
+        </div>
+        ${people.map(person=>`
+            <div class="card" style="margin-top:10px;">
+                <div class="list-head">
+                    <div>
+                        <strong>${person.name||t("unknown")}</strong>
+                        <div class="meta">
+                            <span class="chip">#${person.id}</span>
+                            <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                            <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                        </div>
+                        ${renderPeopleAdminRelationMeta(person)}
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="${personDetailHref(person.id)}">${peopleAdminExtraText("openDetail")}</a>
+                        <a class="btn" href="${personDetailHref(person.id)}">${peopleAdminExtraText("openEntry")}</a>
+                    </div>
+                </div>
+            </div>
+        `).join("")}
+    `;
+};
+function peopleAdminPriorityText(key){
+    const messages={
+        zh:{
+            title:"录入优先级",
+            intro:"这一组人物当前最值得优先完善，可以更快把家谱结构补完整。",
+            high:"高优先",
+            medium:"中优先",
+            info:"资料优先",
+            missingParents:"缺少父母信息",
+            missingFather:"缺少父亲",
+            missingMother:"缺少母亲",
+            missingSpouse:"缺少配偶",
+            missingSummary:"缺少人物简介",
+            missingSource:"缺少资料来源",
+            missingBranch:"未分配支系",
+            missingYears:"缺少生卒年份",
+            recommended:"建议先补",
+            complete:"关系较完整"
+        },
+        en:{
+            title:"Entry Priorities",
+            intro:"These people are the best next targets if you want to complete the family structure faster.",
+            high:"High Priority",
+            medium:"Medium Priority",
+            info:"Profile Priority",
+            missingParents:"Missing parent information",
+            missingFather:"Missing father",
+            missingMother:"Missing mother",
+            missingSpouse:"Missing spouse",
+            missingSummary:"Missing person summary",
+            missingSource:"Missing source",
+            missingBranch:"No branch assigned",
+            missingYears:"Missing life years",
+            recommended:"Recommended Next",
+            complete:"More complete"
+        }
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function ensurePeopleAdminPriorityPanel(){
+    let panel=byId("people-admin-priority");
+    if(panel)return panel;
+    const featured=byId("people-admin-featured");
+    if(!featured||!featured.parentNode)return null;
+    panel=document.createElement("div");
+    panel.id="people-admin-priority";
+    panel.className="person-summary";
+    panel.style.marginBottom="16px";
+    featured.insertAdjacentElement("afterend",panel);
+    return panel;
+}
+function peoplePrioritySnapshot(person){
+    const snapshot=peopleAdminRelationSnapshot(person);
+    const reasons=[];
+    let score=0;
+    if(!snapshot.fatherName&&!snapshot.motherName){
+        score+=4;
+        reasons.push(peopleAdminPriorityText("missingParents"));
+    }else{
+        if(!snapshot.fatherName){
+            score+=2;
+            reasons.push(peopleAdminPriorityText("missingFather"));
+        }
+        if(!snapshot.motherName){
+            score+=2;
+            reasons.push(peopleAdminPriorityText("missingMother"));
+        }
+    }
+    if(snapshot.spouseCount===0){
+        score+=1;
+        reasons.push(peopleAdminPriorityText("missingSpouse"));
+    }
+    if(!person.biographySummary){
+        score+=1;
+        reasons.push(peopleAdminPriorityText("missingSummary"));
+    }
+    if(!person.source){
+        score+=1;
+        reasons.push(peopleAdminPriorityText("missingSource"));
+    }
+    if(!person.branchId){
+        score+=1;
+        reasons.push(peopleAdminPriorityText("missingBranch"));
+    }
+    if(!person.birthYear&&!person.deathYear){
+        score+=1;
+        reasons.push(peopleAdminPriorityText("missingYears"));
+    }
+    return{score,reasons,snapshot};
+}
+function inferPriorityMode(person,item){
+    if(item.reasons.includes(peopleAdminPriorityText("missingFather")))return "father";
+    if(item.reasons.includes(peopleAdminPriorityText("missingMother")))return "mother";
+    if(item.reasons.includes(peopleAdminPriorityText("missingSpouse")))return "spouse";
+    if(item.reasons.includes(peopleAdminPriorityText("missingSummary")))return "profile-summary";
+    if(item.reasons.includes(peopleAdminPriorityText("missingSource")))return "profile-source";
+    if(item.reasons.includes(peopleAdminPriorityText("missingBranch")))return "profile-branch";
+    if(item.reasons.includes(peopleAdminPriorityText("missingYears")))return "profile-years";
+    return null;
+}
+function inferPriorityCategory(mode){
+    if(!mode)return "general";
+    return mode.startsWith("profile-")?"profile":"relation";
+}
+function priorityCategoryText(category){
+    const messages={
+        zh:{relation:"关系任务",profile:"资料任务",general:"综合任务"},
+        en:{relation:"Relation Task",profile:"Profile Task",general:"General Task"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][category]||category;
+}
+function inferPriorityLabel(item){
+    if(item.reasons.some(reason=>[
+        peopleAdminPriorityText("missingSummary"),
+        peopleAdminPriorityText("missingSource"),
+        peopleAdminPriorityText("missingBranch"),
+        peopleAdminPriorityText("missingYears")
+    ].includes(reason)) && item.score < 4){
+        return peopleAdminPriorityText("info");
+    }
+    return item.score>=4?peopleAdminPriorityText("high"):item.score>=2?peopleAdminPriorityText("medium"):peopleAdminPriorityText("complete");
+}
+function renderPeopleAdminPriorityPanel(){
+    const panel=ensurePeopleAdminPriorityPanel();
+    if(!panel)return;
+    const people=filteredPeople().map(person=>({person,...peoplePrioritySnapshot(person)})).sort((a,b)=>{
+        if(b.score!==a.score)return b.score-a.score;
+        const genA=Number(a.person.generationNo??a.person.generation??999);
+        const genB=Number(b.person.generationNo??b.person.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.person.name||"").localeCompare(String(b.person.name||""),"zh-Hans-CN");
+    }).slice(0,4);
+    if(!people.length){
+        panel.innerHTML="";
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminPriorityText("title")}</h3>
+                <p class="intro">${peopleAdminPriorityText("intro")}</p>
+            </div>
+        </div>
+        ${people.map(item=>{
+            const priorityMode=inferPriorityMode(item.person,item);
+            const priorityLabel=inferPriorityLabel(item);
+            const priorityCategory=inferPriorityCategory(priorityMode);
+            return `
+                <div class="card" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${item.person.name||t("unknown")}</strong>
+                            <div class="meta">
+                                <span class="chip">${peopleAdminPriorityText("recommended")}</span>
+                                <span class="chip">${priorityLabel}</span>
+                                <span class="chip">${priorityCategoryText(priorityCategory)}</span>
+                                <span class="chip">${t("branch")}: ${branchName(item.person.branchId)}</span>
+                            </div>
+                            <div class="meta" style="margin-top:8px;">
+                                ${item.reasons.length?item.reasons.map(reason=>`<span class="chip">${reason}</span>`).join(""):`<span class="chip">${peopleAdminPriorityText("complete")}</span>`}
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-primary" href="${personRelationActionHrefWithReason(item.person.id,priorityMode,item.reasons[0]||"priority","priority")}">${t("openDetail")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"father",peopleAdminPriorityText("missingFather"),"priority")}">${peopleAdminRelationText("addFather")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"mother",peopleAdminPriorityText("missingMother"),"priority")}">${peopleAdminRelationText("addMother")}</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("")}
+    `;
+}
+const __peopleAdminOriginalRenderListWithPriority=renderList;
+renderList=function(){
+    __peopleAdminOriginalRenderListWithPriority();
+    renderPeopleAdminPriorityPanel();
+};
+const __peopleAdminOriginalRenderMetricsWithPriority=renderMetrics;
+renderMetrics=function(){
+    __peopleAdminOriginalRenderMetricsWithPriority();
+    renderPeopleAdminPriorityPanel();
+};
+const __peopleAdminOriginalUpdateTextWithPriority=updateText;
+updateText=function(){
+    __peopleAdminOriginalUpdateTextWithPriority();
+    renderPeopleAdminPriorityPanel();
+};
+const __peopleAdminOriginalRefreshWithPriority=refresh;
+refresh=async function(){
+    await __peopleAdminOriginalRefreshWithPriority();
+    renderPeopleAdminPriorityPanel();
+};
+function priorityReasonDone(person,reason){
+    const text=String(reason||"").toLowerCase();
+    if(!text)return false;
+    const outgoing=state.relations.filter(item=>String(item.personId)===String(person.id));
+    if(text.includes("父亲")||text.includes("father"))return outgoing.some(item=>item.relationType==="FATHER");
+    if(text.includes("母亲")||text.includes("mother"))return outgoing.some(item=>item.relationType==="MOTHER");
+    if(text.includes("配偶")||text.includes("spouse"))return outgoing.some(item=>item.relationType==="SPOUSE");
+    if(text.includes("简介")||text.includes("summary"))return Boolean(person.biographySummary);
+    if(text.includes("来源")||text.includes("source"))return Boolean(person.source);
+    if(text.includes("支系")||text.includes("branch"))return Boolean(person.branchId);
+    if(text.includes("生卒")||text.includes("years"))return Boolean(person.birthYear||person.deathYear);
+    if(text.includes("父母")||text.includes("parent")){
+        return outgoing.some(item=>item.relationType==="FATHER")&&outgoing.some(item=>item.relationType==="MOTHER");
+    }
+    return false;
+}
+const __peopleAdminPriorityCategoryText=priorityCategoryText;
+priorityCategoryText=function(category){
+    if(category==="pending")return state.lang==="en"?"Pending":"待完成";
+    if(category==="done")return state.lang==="en"?"Completed":"已完成";
+    if(category==="lastFocus")return state.lang==="en"?"Recently Opened":"刚处理过";
+    return __peopleAdminPriorityCategoryText(category);
+};
+const __peopleAdminPriorityApplyQueryParams=applyPeopleAdminQueryParams;
+applyPeopleAdminQueryParams=function(){
+    __peopleAdminPriorityApplyQueryParams();
+    const params=new URLSearchParams(window.location.search);
+    state.lastFocusPersonId=params.get("personId");
+    renderPeopleAdminPriorityPanel();
+};
+renderPeopleAdminPriorityPanel=function(){
+    const panel=ensurePeopleAdminPriorityPanel();
+    if(!panel)return;
+    const people=filteredPeople().map(person=>({person,...peoplePrioritySnapshot(person)})).sort((a,b)=>{
+        if(b.score!==a.score)return b.score-a.score;
+        const genA=Number(a.person.generationNo??a.person.generation??999);
+        const genB=Number(b.person.generationNo??b.person.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.person.name||"").localeCompare(String(b.person.name||""),"zh-Hans-CN");
+    }).slice(0,4);
+    if(!people.length){
+        panel.innerHTML="";
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminPriorityText("title")}</h3>
+                <p class="intro">${peopleAdminPriorityText("intro")}</p>
+            </div>
+        </div>
+        ${people.map(item=>{
+            const priorityMode=inferPriorityMode(item.person,item);
+            const priorityLabel=inferPriorityLabel(item);
+            const priorityCategory=inferPriorityCategory(priorityMode);
+            const primaryReason=item.reasons[0]||"priority";
+            const taskDone=priorityReasonDone(item.person,primaryReason);
+            const isLastFocus=String(item.person.id)===String(state.lastFocusPersonId||"");
+            return `
+                <div class="card${isLastFocus?" flash-focus":""}" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${item.person.name||t("unknown")}</strong>
+                            <div class="meta">
+                                <span class="chip">${peopleAdminPriorityText("recommended")}</span>
+                                <span class="chip">${priorityLabel}</span>
+                                <span class="chip">${priorityCategoryText(priorityCategory)}</span>
+                                <span class="chip">${priorityCategoryText(taskDone?"done":"pending")}</span>
+                                ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                                <span class="chip">${t("branch")}: ${branchName(item.person.branchId)}</span>
+                            </div>
+                            <div class="meta" style="margin-top:8px;">
+                                ${item.reasons.length?item.reasons.map(reason=>`<span class="chip">${reason}</span>`).join(""):`<span class="chip">${peopleAdminPriorityText("complete")}</span>`}
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-primary" href="${personRelationActionHrefWithReason(item.person.id,priorityMode,primaryReason,"priority")}">${t("openDetail")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"father",peopleAdminPriorityText("missingFather"),"priority")}">${peopleAdminRelationText("addFather")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"mother",peopleAdminPriorityText("missingMother"),"priority")}">${peopleAdminRelationText("addMother")}</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("")}
+    `;
+};
+function peopleAdminNextTaskText(key){
+    const messages={
+        zh:{
+            next:"下一步建议",
+            missingFather:"补父亲关系",
+            missingMother:"补母亲关系",
+            missingSpouse:"补配偶关系",
+            missingSummary:"补人物简介",
+            missingSource:"补资料来源",
+            missingBranch:"分配支系",
+            missingYears:"补生卒年份"
+        },
+        en:{
+            next:"Recommended next step",
+            missingFather:"Add father relation",
+            missingMother:"Add mother relation",
+            missingSpouse:"Add spouse relation",
+            missingSummary:"Complete person summary",
+            missingSource:"Complete source",
+            missingBranch:"Assign branch",
+            missingYears:"Complete life years"
+        }
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function nextTaskForPerson(person){
+    const outgoing=state.relations.filter(item=>String(item.personId)===String(person.id));
+    if(!outgoing.some(item=>item.relationType==="FATHER"))return {mode:"father",reason:peopleAdminNextTaskText("missingFather")};
+    if(!outgoing.some(item=>item.relationType==="MOTHER"))return {mode:"mother",reason:peopleAdminNextTaskText("missingMother")};
+    if(!outgoing.some(item=>item.relationType==="SPOUSE"))return {mode:"spouse",reason:peopleAdminNextTaskText("missingSpouse")};
+    if(!person.biographySummary)return {mode:"profile-summary",reason:peopleAdminNextTaskText("missingSummary")};
+    if(!person.source)return {mode:"profile-source",reason:peopleAdminNextTaskText("missingSource")};
+    if(!person.branchId)return {mode:"profile-branch",reason:peopleAdminNextTaskText("missingBranch")};
+    if(!person.birthYear&&!person.deathYear)return {mode:"profile-years",reason:peopleAdminNextTaskText("missingYears")};
+    return null;
+}
+const __peopleAdminPriorityPanelWithNextTask=renderPeopleAdminPriorityPanel;
+renderPeopleAdminPriorityPanel=function(){
+    const panel=ensurePeopleAdminPriorityPanel();
+    if(!panel)return;
+    const people=filteredPeople().map(person=>({person,...peoplePrioritySnapshot(person)})).sort((a,b)=>{
+        if(b.score!==a.score)return b.score-a.score;
+        const genA=Number(a.person.generationNo??a.person.generation??999);
+        const genB=Number(b.person.generationNo??b.person.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.person.name||"").localeCompare(String(b.person.name||""),"zh-Hans-CN");
+    }).slice(0,4);
+    if(!people.length){
+        panel.innerHTML="";
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminPriorityText("title")}</h3>
+                <p class="intro">${peopleAdminPriorityText("intro")}</p>
+            </div>
+        </div>
+        ${people.map(item=>{
+            const priorityMode=inferPriorityMode(item.person,item);
+            const priorityLabel=inferPriorityLabel(item);
+            const priorityCategory=inferPriorityCategory(priorityMode);
+            const primaryReason=item.reasons[0]||"priority";
+            const taskDone=priorityReasonDone(item.person,primaryReason);
+            const isLastFocus=String(item.person.id)===String(state.lastFocusPersonId||"");
+            const nextTask=nextTaskForPerson(item.person);
+            return `
+                <div class="card${isLastFocus?" flash-focus":""}" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${item.person.name||t("unknown")}</strong>
+                            <div class="meta">
+                                <span class="chip">${peopleAdminPriorityText("recommended")}</span>
+                                <span class="chip">${priorityLabel}</span>
+                                <span class="chip">${priorityCategoryText(priorityCategory)}</span>
+                                <span class="chip">${priorityCategoryText(taskDone?"done":"pending")}</span>
+                                ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                                <span class="chip">${t("branch")}: ${branchName(item.person.branchId)}</span>
+                            </div>
+                            <div class="meta" style="margin-top:8px;">
+                                ${item.reasons.length?item.reasons.map(reason=>`<span class="chip">${reason}</span>`).join(""):`<span class="chip">${peopleAdminPriorityText("complete")}</span>`}
+                            </div>
+                            ${nextTask?`<div class="meta" style="margin-top:8px;"><span class="chip">${peopleAdminNextTaskText("next")}</span><span class="chip">${nextTask.reason}</span></div>`:""}
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-primary" href="${personRelationActionHrefWithReason(item.person.id,priorityMode,primaryReason,"priority")}">${t("openDetail")}</a>
+                            ${nextTask?`<a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,nextTask.mode,nextTask.reason,"priority")}">${peopleAdminNextTaskText("next")}</a>`:""}
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"father",peopleAdminPriorityText("missingFather"),"priority")}">${peopleAdminRelationText("addFather")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"mother",peopleAdminPriorityText("missingMother"),"priority")}">${peopleAdminRelationText("addMother")}</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("")}
+    `;
+};
+function peopleAdminTaskRibbonText(key){
+    const messages={
+        zh:{current:"当前任务",next:"下一步",pending:"待完成",done:"已完成"},
+        en:{current:"Current Task",next:"Next Task",pending:"Pending",done:"Completed"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function renderPeopleAdminTaskRibbon(person,primaryReason,nextTask){
+    const done=priorityReasonDone(person,primaryReason);
+    return `
+        <div class="meta" style="margin-top:8px;">
+            <span class="chip">${peopleAdminTaskRibbonText("current")}</span>
+            <span class="chip">${primaryReason}</span>
+            <span class="chip">${peopleAdminTaskRibbonText(done?"done":"pending")}</span>
+            ${nextTask?`<span class="chip">${peopleAdminTaskRibbonText("next")}</span><span class="chip">${nextTask.reason}</span>`:""}
+        </div>
+    `;
+}
+const __peopleAdminTaskRibbonRenderPriority=renderPeopleAdminPriorityPanel;
+renderPeopleAdminPriorityPanel=function(){
+    const panel=ensurePeopleAdminPriorityPanel();
+    if(!panel)return;
+    const people=filteredPeople().map(person=>({person,...peoplePrioritySnapshot(person)})).sort((a,b)=>{
+        if(b.score!==a.score)return b.score-a.score;
+        const genA=Number(a.person.generationNo??a.person.generation??999);
+        const genB=Number(b.person.generationNo??b.person.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.person.name||"").localeCompare(String(b.person.name||""),"zh-Hans-CN");
+    }).slice(0,4);
+    if(!people.length){
+        panel.innerHTML="";
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminPriorityText("title")}</h3>
+                <p class="intro">${peopleAdminPriorityText("intro")}</p>
+            </div>
+        </div>
+        ${people.map(item=>{
+            const priorityMode=inferPriorityMode(item.person,item);
+            const priorityLabel=inferPriorityLabel(item);
+            const priorityCategory=inferPriorityCategory(priorityMode);
+            const primaryReason=item.reasons[0]||"priority";
+            const taskDone=priorityReasonDone(item.person,primaryReason);
+            const isLastFocus=String(item.person.id)===String(state.lastFocusPersonId||"");
+            const nextTask=nextTaskForPerson(item.person);
+            return `
+                <div class="card${isLastFocus?" flash-focus":""}" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${item.person.name||t("unknown")}</strong>
+                            <div class="meta">
+                                <span class="chip">${peopleAdminPriorityText("recommended")}</span>
+                                <span class="chip">${priorityLabel}</span>
+                                <span class="chip">${priorityCategoryText(priorityCategory)}</span>
+                                <span class="chip">${priorityCategoryText(taskDone?"done":"pending")}</span>
+                                ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                                <span class="chip">${t("branch")}: ${branchName(item.person.branchId)}</span>
+                            </div>
+                            <div class="meta" style="margin-top:8px;">
+                                ${item.reasons.length?item.reasons.map(reason=>`<span class="chip">${reason}</span>`).join(""):`<span class="chip">${peopleAdminPriorityText("complete")}</span>`}
+                            </div>
+                            ${renderPeopleAdminTaskRibbon(item.person,primaryReason,nextTask)}
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-primary" href="${personRelationActionHrefWithReason(item.person.id,priorityMode,primaryReason,"priority")}">${t("openDetail")}</a>
+                            ${nextTask?`<a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,nextTask.mode,nextTask.reason,"priority")}">${peopleAdminTaskRibbonText("next")}</a>`:""}
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"father",peopleAdminPriorityText("missingFather"),"priority")}">${peopleAdminRelationText("addFather")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"mother",peopleAdminPriorityText("missingMother"),"priority")}">${peopleAdminRelationText("addMother")}</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("")}
+    `;
+};
+const __peopleAdminOriginalRenderListWithTaskRibbon=renderList;
+renderList=function(){
+    const list=byId("people-list");
+    const people=filteredPeople().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));
+    if(!people.length){
+        list.innerHTML=`<div class="empty">${t("empty")}</div>`;
+        byId("count-value").textContent="0";
+        renderPeopleAdminFeatured();
+        renderPeopleAdminPriorityPanel();
+        return;
+    }
+    list.innerHTML=people.map(person=>{
+        const snapshot=peopleAdminRelationSnapshot(person);
+        const nextTask=nextTaskForPerson(person);
+        const primaryReason=nextTask?.reason||peopleAdminPriorityText("complete");
+        const isLastFocus=String(person.id)===String(state.lastFocusPersonId||"");
+        return `
+            <div class="card${isLastFocus?" flash-focus":""}">
+                <div class="list-head">
+                    <div>
+                        <strong>${person.name||t("unknown")}</strong>
+                        <div class="meta">
+                            <span class="chip">#${person.id}</span>
+                            <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                            <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                            ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                        </div>
+                        <div class="meta" style="margin-top:8px;">
+                            <span class="chip">${peopleAdminRelationText("father")}: ${snapshot.fatherName||peopleAdminRelationText("none")}</span>
+                            <span class="chip">${peopleAdminRelationText("mother")}: ${snapshot.motherName||peopleAdminRelationText("none")}</span>
+                            <span class="chip">${peopleAdminRelationText("spouses")}: ${snapshot.spouseCount}</span>
+                            <span class="chip">${peopleAdminRelationText("children")}: ${snapshot.childCount}</span>
+                        </div>
+                        ${nextTask?renderPeopleAdminTaskRibbon(person,primaryReason,nextTask):`<div class="meta" style="margin-top:8px;"><span class="chip">${peopleAdminTaskRibbonText("current")}</span><span class="chip">${peopleAdminPriorityText("complete")}</span><span class="chip">${peopleAdminTaskRibbonText("done")}</span></div>`}
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="${personDetailHref(person.id)}">${t("openDetail")}</a>
+                        <a class="btn" href="${personDetailHref(person.id)}">${t("openEntry")}</a>
+                        ${nextTask?`<a class="btn btn-chip" href="${personRelationActionHrefWithReason(person.id,nextTask.mode,nextTask.reason,"list")}">${peopleAdminTaskRibbonText("next")}</a>`:""}
+                    </div>
+                </div>
+                <div class="meta">
+                    <span>${t("years")}: ${person.birthYear||"-"} - ${person.deathYear||"-"}</span>
+                    ${person.title?`<span>${person.title}</span>`:""}
+                    ${person.occupation?`<span>${person.occupation}</span>`:""}
+                </div>
+                ${person.biographySummary?`<div class="tip">${person.biographySummary}</div>`:""}
+            </div>
+        `;
+    }).join("");
+    byId("count-value").textContent=String(people.length);
+    renderPeopleAdminFeatured();
+    renderPeopleAdminPriorityPanel();
+};
+const __peopleAdminTaskRibbonTextBase=peopleAdminTaskRibbonText;
+peopleAdminTaskRibbonText=function(key){
+    if(key==="justDone")return state.lang==="en"?"Just Completed":"刚完成";
+    if(key==="returnHint")return state.lang==="en"?"Returned from detail":"已从详情页返回";
+    return __peopleAdminTaskRibbonTextBase(key);
+};
+function ensurePeopleAdminTaskStyles(){
+    if(byId("people-admin-task-style"))return;
+    const style=document.createElement("style");
+    style.id="people-admin-task-style";
+    style.textContent=`
+        .task-ribbon{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+        .task-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
+        .task-chip.current{background:rgba(181,120,32,.14);color:#8a4b08}
+        .task-chip.next{background:rgba(35,99,180,.12);color:#1d4e89}
+        .task-chip.pending{background:rgba(180,83,9,.12);color:#9a3412}
+        .task-chip.done{background:rgba(22,101,52,.12);color:#166534}
+        .task-chip.kind{background:rgba(88,28,135,.10);color:#6b21a8}
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminApplyQueryParamsWithReturn=applyPeopleAdminQueryParams;
+applyPeopleAdminQueryParams=function(){
+    __peopleAdminApplyQueryParamsWithReturn();
+    const params=new URLSearchParams(window.location.search);
+    state.completedTask=params.get("completedTask");
+    state.returnNextTask=params.get("nextTask");
+    state.focusReason=params.get("focusReason");
+    state.focusSource=params.get("source");
+    state.quickRelation=params.get("quickRelation");
+};
+function ensurePeopleAdminFocusHint(){
+    let tip=byId("people-admin-focus-hint");
+    if(tip)return tip;
+    const panel=ensurePeopleAdminPriorityPanel();
+    if(!panel||!panel.parentNode)return null;
+    tip=document.createElement("div");
+    tip.id="people-admin-focus-hint";
+    tip.className="tip";
+    tip.style.marginBottom="12px";
+    panel.insertAdjacentElement("beforebegin",tip);
+    return tip;
+}
+function peopleAdminFocusHintText(key){
+    const messages={
+        zh:{fromHome:"当前任务来自首页后台待办。",focus:"当前重点",none:"当前没有额外任务上下文。"},
+        en:{fromHome:"This task came from the homepage admin tasks.",focus:"Current focus",none:"There is no additional task context right now."}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function renderPeopleAdminFocusHint(){
+    const tip=ensurePeopleAdminFocusHint();
+    if(!tip)return;
+    if(!state.focusReason&&!state.lastFocusPersonId){
+        tip.textContent=peopleAdminFocusHintText("none");
+        tip.classList.add("hidden");
+        return;
+    }
+    const name=state.people.find(item=>String(item.id)===String(state.lastFocusPersonId||""))?.name;
+    const actionHref=state.lastFocusPersonId
+        ? personRelationActionHrefWithReason(
+            state.lastFocusPersonId,
+            state.quickRelation || null,
+            state.focusReason || state.completedTask || "",
+            state.focusSource || "people-admin"
+        )
+        : "person-entry.html";
+    tip.innerHTML=`
+        <div class="list-head">
+            <div>
+                <strong>${peopleAdminFocusHintText("focus")}</strong>
+                <div class="hint">${state.focusSource==="home"?peopleAdminFocusHintText("fromHome"):""} ${name?`${name} · `:""}${state.focusReason||state.completedTask||""}</div>
+            </div>
+            <div class="actions">
+                <a class="btn btn-chip" href="${actionHref}">${state.lang==="en"?"Open task":"打开任务"}</a>
+                ${state.lastFocusPersonId?`<a class="btn btn-chip" href="person-entry.html?personId=${state.lastFocusPersonId}">${state.lang==="en"?"Open person":"打开人物"}</a>`:""}
+            </div>
+        </div>
+    `;
+    tip.classList.remove("hidden");
+}
+const __peopleAdminRenderPriorityWithFocus=renderPeopleAdminPriorityPanel;
+renderPeopleAdminPriorityPanel=function(){
+    __peopleAdminRenderPriorityWithFocus();
+    renderPeopleAdminFocusHint();
+};
+const __peopleAdminRenderListWithFocus=renderList;
+renderList=function(){
+    __peopleAdminRenderListWithFocus();
+    renderPeopleAdminFocusHint();
+};
+const __peopleAdminRenderTaskRibbonBase=renderPeopleAdminTaskRibbon;
+renderPeopleAdminTaskRibbon=function(person,primaryReason,nextTask){
+    ensurePeopleAdminTaskStyles();
+    const base=__peopleAdminRenderTaskRibbonBase(person,primaryReason,nextTask);
+    const justCompleted=String(person.id)===String(state.lastFocusPersonId||"")&&state.completedTask&&String(state.completedTask)===String(primaryReason);
+    const normalized=base
+        .replace('<div class="meta" style="margin-top:8px;">','<div class="task-ribbon">')
+        .replace(`<span class="chip">${peopleAdminTaskRibbonText("current")}</span>`,`<span class="task-chip current">${peopleAdminTaskRibbonText("current")}</span>`)
+        .replace(`<span class="chip">${peopleAdminTaskRibbonText("done")}</span>`,`<span class="task-chip done">${peopleAdminTaskRibbonText("done")}</span>`)
+        .replace(`<span class="chip">${peopleAdminTaskRibbonText("pending")}</span>`,`<span class="task-chip pending">${peopleAdminTaskRibbonText("pending")}</span>`)
+        .replace(`<span class="chip">${peopleAdminTaskRibbonText("next")}</span>`,`<span class="task-chip next">${peopleAdminTaskRibbonText("next")}</span>`);
+    if(!justCompleted)return normalized;
+    return normalized.replace("</div>",`<span class="task-chip done">${peopleAdminTaskRibbonText("justDone")}</span><span class="chip">${peopleAdminTaskRibbonText("returnHint")}</span></div>`);
+};
+renderPeopleAdminPriorityPanel=function(){
+    const panel=ensurePeopleAdminPriorityPanel();
+    if(!panel)return;
+    const people=filteredPeople().map(person=>({person,...peoplePrioritySnapshot(person)})).sort((a,b)=>{
+        if(b.score!==a.score)return b.score-a.score;
+        const genA=Number(a.person.generationNo??a.person.generation??999);
+        const genB=Number(b.person.generationNo??b.person.generation??999);
+        if(genA!==genB)return genA-genB;
+        return String(a.person.name||"").localeCompare(String(b.person.name||""),"zh-Hans-CN");
+    }).slice(0,4);
+    if(!people.length){
+        panel.innerHTML="";
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminPriorityText("title")}</h3>
+                <p class="intro">${peopleAdminPriorityText("intro")}</p>
+            </div>
+        </div>
+        ${people.map(item=>{
+            const priorityMode=inferPriorityMode(item.person,item);
+            const priorityLabel=inferPriorityLabel(item);
+            const priorityCategory=inferPriorityCategory(priorityMode);
+            const primaryReason=item.reasons[0]||"priority";
+            const taskDone=priorityReasonDone(item.person,primaryReason);
+            const isLastFocus=String(item.person.id)===String(state.lastFocusPersonId||"");
+            const nextTask=(isLastFocus&&state.returnNextTask)?{reason:state.returnNextTask,mode:inferPriorityMode(item.person,item)}:nextTaskForPerson(item.person);
+            return `
+                <div class="card${isLastFocus?" flash-focus":""}" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${item.person.name||t("unknown")}</strong>
+                            <div class="meta">
+                                <span class="chip">${peopleAdminPriorityText("recommended")}</span>
+                                <span class="chip">${priorityLabel}</span>
+                                <span class="chip">${priorityCategoryText(priorityCategory)}</span>
+                                <span class="chip">${priorityCategoryText(taskDone?"done":"pending")}</span>
+                                ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                                ${isLastFocus&&state.completedTask?`<span class="chip">${peopleAdminTaskRibbonText("justDone")}</span>`:""}
+                                <span class="chip">${t("branch")}: ${branchName(item.person.branchId)}</span>
+                            </div>
+                            <div class="meta" style="margin-top:8px;">
+                                ${item.reasons.length?item.reasons.map(reason=>`<span class="chip">${reason}</span>`).join(""):`<span class="chip">${peopleAdminPriorityText("complete")}</span>`}
+                            </div>
+                            ${renderPeopleAdminTaskRibbon(item.person,primaryReason,nextTask)}
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-primary" href="${personRelationActionHrefWithReason(item.person.id,priorityMode,primaryReason,"priority")}">${t("openDetail")}</a>
+                            ${nextTask?`<a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,nextTask.mode,nextTask.reason,"priority")}">${peopleAdminTaskRibbonText("next")}</a>`:""}
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"father",peopleAdminPriorityText("missingFather"),"priority")}">${peopleAdminRelationText("addFather")}</a>
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(item.person.id,"mother",peopleAdminPriorityText("missingMother"),"priority")}">${peopleAdminRelationText("addMother")}</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("")}
+    `;
+};
+renderList=function(){
+    const list=byId("people-list");
+    const people=filteredPeople().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));
+    if(!people.length){
+        list.innerHTML=`<div class="empty">${t("empty")}</div>`;
+        byId("count-value").textContent="0";
+        renderPeopleAdminFeatured();
+        renderPeopleAdminPriorityPanel();
+        return;
+    }
+    list.innerHTML=people.map(person=>{
+        const snapshot=peopleAdminRelationSnapshot(person);
+        const nextTask=(String(person.id)===String(state.lastFocusPersonId||"")&&state.returnNextTask)?{reason:state.returnNextTask,mode:null}:nextTaskForPerson(person);
+        const primaryReason=nextTask?.reason||peopleAdminPriorityText("complete");
+        const isLastFocus=String(person.id)===String(state.lastFocusPersonId||"");
+        return `
+            <div class="card${isLastFocus?" flash-focus":""}">
+                <div class="list-head">
+                    <div>
+                        <strong>${person.name||t("unknown")}</strong>
+                        <div class="meta">
+                            <span class="chip">#${person.id}</span>
+                            <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                            <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                            ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                            ${isLastFocus&&state.completedTask?`<span class="chip">${peopleAdminTaskRibbonText("justDone")}</span>`:""}
+                        </div>
+                        <div class="meta" style="margin-top:8px;">
+                            <span class="chip">${peopleAdminRelationText("father")}: ${snapshot.fatherName||peopleAdminRelationText("none")}</span>
+                            <span class="chip">${peopleAdminRelationText("mother")}: ${snapshot.motherName||peopleAdminRelationText("none")}</span>
+                            <span class="chip">${peopleAdminRelationText("spouses")}: ${snapshot.spouseCount}</span>
+                            <span class="chip">${peopleAdminRelationText("children")}: ${snapshot.childCount}</span>
+                        </div>
+                        ${nextTask?renderPeopleAdminTaskRibbon(person,primaryReason,nextTask):`<div class="meta" style="margin-top:8px;"><span class="chip">${peopleAdminTaskRibbonText("current")}</span><span class="chip">${peopleAdminPriorityText("complete")}</span><span class="chip">${peopleAdminTaskRibbonText("done")}</span></div>`}
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-primary" href="${personDetailHref(person.id)}">${t("openDetail")}</a>
+                        <a class="btn" href="${personDetailHref(person.id)}">${t("openEntry")}</a>
+                        ${nextTask?`<a class="btn btn-chip" href="${personRelationActionHrefWithReason(person.id,nextTask.mode,nextTask.reason,"list")}">${peopleAdminTaskRibbonText("next")}</a>`:""}
+                    </div>
+                </div>
+                <div class="meta">
+                    <span>${t("years")}: ${person.birthYear||"-"} - ${person.deathYear||"-"}</span>
+                    ${person.title?`<span>${person.title}</span>`:""}
+                    ${person.occupation?`<span>${person.occupation}</span>`:""}
+                </div>
+                ${person.biographySummary?`<div class="tip">${person.biographySummary}</div>`:""}
+            </div>
+        `;
+    }).join("");
+    byId("count-value").textContent=String(people.length);
+    renderPeopleAdminFeatured();
+    renderPeopleAdminPriorityPanel();
+};
+function branchTaskText(key){
+    const messages={
+        zh:{
+            title:"支系待办",
+            intro:"这一区优先提醒支系相关缺口，帮助你把人物更快挂到正确支系上。",
+            noBranchPeople:"未挂支系人物",
+            weakBranch:"待补核心人物支系",
+            assign:"去分配支系",
+            open:"查看支系人物",
+            empty:"当前没有明显的支系待办。"
+        },
+        en:{
+            title:"Branch Tasks",
+            intro:"This block highlights branch-related gaps so people can be assigned into the right branch sooner.",
+            noBranchPeople:"People Without Branch",
+            weakBranch:"Branches Missing Core People",
+            assign:"Assign Branch",
+            open:"Open Branch People",
+            empty:"No obvious branch-related tasks were detected."
+        }
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function ensureBranchTaskPanel(){
+    let panel=byId("people-admin-branch-task");
+    if(panel)return panel;
+    const summary=byId("people-admin-summary");
+    if(!summary||!summary.parentNode)return null;
+    panel=document.createElement("div");
+    panel.id="people-admin-branch-task";
+    panel.className="person-summary";
+    panel.style.marginTop="14px";
+    summary.insertAdjacentElement("afterend",panel);
+    return panel;
+}
+function renderBranchTaskPanel(){
+    const panel=ensureBranchTaskPanel();
+    if(!panel)return;
+    const gid=byId("genealogyId")?.value;
+    const people=filteredPeople();
+    const isBranchReturn=String(state.focusSource||"").includes("branch")||String(state.focusReason||"").includes("支系")||String(state.completedTask||"").includes("支系")||String(state.completedTask||"").toLowerCase().includes("branch");
+    const noBranchPeople=people.filter(person=>!person.branchId).slice(0,3);
+    const branches=state.branches.filter(branch=>!gid||String(branch.genealogyId)===String(gid));
+    const branchPeopleCount=branches.map(branch=>({
+        branch,
+        count: state.people.filter(person=>String(person.branchId||"")===String(branch.id)).length
+    })).sort((a,b)=>a.count-b.count).slice(0,3);
+    if(!noBranchPeople.length&&!branchPeopleCount.some(item=>item.count<=1)){
+        panel.innerHTML=`<div class="list-head"><div><h3>${branchTaskText("title")}</h3><p class="intro">${branchTaskText("empty")}</p></div></div>`;
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${branchTaskText("title")}</h3>
+                <p class="intro">${branchTaskText("intro")}</p>
+            </div>
+        </div>
+        ${noBranchPeople.length?`
+            <div class="meta" style="margin-top:8px;"><span class="task-chip current">${branchTaskText("noBranchPeople")}</span></div>
+            ${noBranchPeople.map(person=>`
+                <div class="card${String(state.lastFocusPersonId||"")===String(person.id)&&isBranchReturn?" flash-focus":""}" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${person.name||t("unknown")}</strong>
+                            <div class="meta">
+                                <span class="chip">#${person.id}</span>
+                                <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                                ${String(state.lastFocusPersonId||"")===String(person.id)&&state.completedTask?`<span class="task-chip done">${peopleAdminTaskRibbonText("justDone")}</span>`:""}
+                            </div>
+                            ${String(state.lastFocusPersonId||"")===String(person.id)&&state.completedTask?`<div class="task-ribbon"><span class="task-chip done">${state.completedTask}</span>${state.returnNextTask?`<span class="task-chip next">${peopleAdminTaskRibbonText("next")}</span><span class="chip">${state.returnNextTask}</span>`:""}</div>`:""}
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-chip" href="${personRelationActionHrefWithReason(person.id,"profile-branch",branchTaskText("noBranchPeople"),"branch-task")}">${branchTaskText("assign")}</a>
+                        </div>
+                    </div>
+                </div>
+            `).join("")}
+        `:""}
+        ${branchPeopleCount.some(item=>item.count<=1)?`
+            <div class="meta" style="margin-top:12px;"><span class="task-chip next">${branchTaskText("weakBranch")}</span></div>
+            ${branchPeopleCount.filter(item=>item.count<=1).map(item=>`
+                <div class="card" style="margin-top:10px;">
+                    <div class="list-head">
+                        <div>
+                            <strong>${item.branch.name}</strong>
+                            <div class="meta">
+                                <span class="chip">${t("branch")}: ${item.branch.name}</span>
+                                <span class="chip">${state.lang==="en"?"People":"人物"}: ${item.count}</span>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <a class="btn btn-chip" href="people-admin.html?genealogyId=${item.branch.genealogyId}&branchId=${item.branch.id}">${branchTaskText("open")}</a>
+                        </div>
+                    </div>
+                </div>
+            `).join("")}
+        `:""}
+    `;
+}
+const __branchTaskRenderMetrics=renderMetrics;
+renderMetrics=function(){
+    __branchTaskRenderMetrics();
+    renderBranchTaskPanel();
+};
+const __branchTaskUpdateText=updateText;
+updateText=function(){
+    __branchTaskUpdateText();
+    renderBranchTaskPanel();
+};
+const __branchTaskRefresh=refresh;
+refresh=async function(){
+    await __branchTaskRefresh();
+    renderBranchTaskPanel();
+};
+const __branchTaskRenderList=renderList;
+renderList=function(){
+    __branchTaskRenderList();
+    renderBranchTaskPanel();
+};
+function taskBatchText(key){
+    const messages={
+        zh:{
+            title:"批量整理任务",
+            intro:"按同类缺口集中处理，可以更快推进数据整理。",
+            father:"批量补父亲",
+            mother:"批量补母亲",
+            spouse:"批量补配偶",
+            summary:"批量补简介",
+            source:"批量补来源",
+            branch:"批量分配支系",
+            years:"批量补年代",
+            open:"打开分组",
+            empty:"当前没有明显的批量整理任务。"
+        },
+        en:{
+            title:"Batch Cleanup Tasks",
+            intro:"Handle similar gaps together to move data cleanup faster.",
+            father:"Batch Add Fathers",
+            mother:"Batch Add Mothers",
+            spouse:"Batch Add Spouses",
+            summary:"Batch Summaries",
+            source:"Batch Sources",
+            branch:"Batch Branch Assignment",
+            years:"Batch Life Years",
+            open:"Open Group",
+            empty:"No obvious batch cleanup tasks were detected."
+        }
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function ensureTaskBatchPanel(){
+    let panel=byId("people-admin-task-batch");
+    if(panel)return panel;
+    const priority=byId("people-admin-priority");
+    if(!priority||!priority.parentNode)return null;
+    panel=document.createElement("div");
+    panel.id="people-admin-task-batch";
+    panel.className="person-summary";
+    panel.style.marginTop="14px";
+    priority.insertAdjacentElement("afterend",panel);
+    return panel;
+}
+function taskBatchGroups(){
+    const people=filteredPeople();
+    const relations=state.relations;
+    const hasRelation=(personId,type)=>relations.some(item=>String(item.personId)===String(personId)&&item.relationType===type);
+    const groups=[
+        {key:"father",label:taskBatchText("father"),count:people.filter(p=>!hasRelation(p.id,"FATHER")).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("father"))+"&source=batch&quickRelation=father"},
+        {key:"mother",label:taskBatchText("mother"),count:people.filter(p=>!hasRelation(p.id,"MOTHER")).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("mother"))+"&source=batch&quickRelation=mother"},
+        {key:"spouse",label:taskBatchText("spouse"),count:people.filter(p=>!hasRelation(p.id,"SPOUSE")).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("spouse"))+"&source=batch&quickRelation=spouse"},
+        {key:"summary",label:taskBatchText("summary"),count:people.filter(p=>!p.biographySummary).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("summary"))+"&source=batch&quickRelation=profile-summary"},
+        {key:"source",label:taskBatchText("source"),count:people.filter(p=>!p.source).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("source"))+"&source=batch&quickRelation=profile-source"},
+        {key:"branch",label:taskBatchText("branch"),count:people.filter(p=>!p.branchId).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("branch"))+"&source=batch&quickRelation=profile-branch"},
+        {key:"years",label:taskBatchText("years"),count:people.filter(p=>!p.birthYear&&!p.deathYear).length,href:"people-admin.html?focusReason="+encodeURIComponent(taskBatchText("years"))+"&source=batch&quickRelation=profile-years"}
+    ];
+    return groups.filter(group=>group.count>0).sort((a,b)=>b.count-a.count).slice(0,4);
+}
+function renderTaskBatchPanel(){
+    const panel=ensureTaskBatchPanel();
+    if(!panel)return;
+    const groups=taskBatchGroups();
+    if(!groups.length){
+        panel.innerHTML=`<div class="list-head"><div><h3>${taskBatchText("title")}</h3><p class="intro">${taskBatchText("empty")}</p></div></div>`;
+        return;
+    }
+    panel.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${taskBatchText("title")}</h3>
+                <p class="intro">${taskBatchText("intro")}</p>
+            </div>
+        </div>
+        ${groups.map(group=>`
+            <div class="card" style="margin-top:10px;">
+                <div class="list-head">
+                    <div>
+                        <strong>${group.label}</strong>
+                        <div class="task-ribbon">
+                            <span class="task-chip current">${state.lang==="en"?"Group":"分组"}</span>
+                            <span class="chip">${state.lang==="en"?"People":"人物"}: ${group.count}</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <a class="btn btn-chip" href="${group.href}">${taskBatchText("open")}</a>
+                    </div>
+                </div>
+            </div>
+        `).join("")}
+    `;
+}
+const __taskBatchRenderMetrics=renderMetrics;
+renderMetrics=function(){
+    __taskBatchRenderMetrics();
+    renderTaskBatchPanel();
+};
+const __taskBatchUpdateText=updateText;
+updateText=function(){
+    __taskBatchUpdateText();
+    renderTaskBatchPanel();
+};
+const __taskBatchRefresh=refresh;
+refresh=async function(){
+    await __taskBatchRefresh();
+    renderTaskBatchPanel();
+};
+const __taskBatchRenderList=renderList;
+renderList=function(){
+    __taskBatchRenderList();
+    renderTaskBatchPanel();
+};
+function personMatchesTaskGroup(person, group){
+    const outgoing=state.relations.filter(item=>String(item.personId)===String(person.id));
+    if(!group)return true;
+    if(group==="father")return !outgoing.some(item=>item.relationType==="FATHER");
+    if(group==="mother")return !outgoing.some(item=>item.relationType==="MOTHER");
+    if(group==="spouse")return !outgoing.some(item=>item.relationType==="SPOUSE");
+    if(group==="summary")return !person.biographySummary;
+    if(group==="source")return !person.source;
+    if(group==="branch")return !person.branchId;
+    if(group==="years")return !person.birthYear&&!person.deathYear;
+    return true;
+}
+const __taskBatchGroupsBase=taskBatchGroups;
+taskBatchGroups=function(){
+    return __taskBatchGroupsBase().map(group=>({
+        ...group,
+        href: group.href + `&taskGroup=${group.key}`
+    }));
+};
+const __taskBatchApplyQueryBase=applyPeopleAdminQueryParams;
+applyPeopleAdminQueryParams=function(){
+    __taskBatchApplyQueryBase();
+    const params=new URLSearchParams(window.location.search);
+    state.taskGroup=params.get("taskGroup");
+};
+const __taskBatchRenderListFiltered=renderList;
+renderList=function(){
+    const originalFilteredPeople=filteredPeople;
+    if(state.taskGroup){
+        filteredPeople=function(){
+            return originalFilteredPeople().filter(person=>personMatchesTaskGroup(person,state.taskGroup));
+        };
+    }
+    __taskBatchRenderListFiltered();
+    filteredPeople=originalFilteredPeople;
+    renderTaskBatchPanel();
+};
+const __taskBatchRenderPanelBase=renderTaskBatchPanel;
+renderTaskBatchPanel=function(){
+    __taskBatchRenderPanelBase();
+    if(!state.taskGroup)return;
+    const panel=ensureTaskBatchPanel();
+    if(!panel)return;
+    const head=panel.querySelector(".list-head");
+    if(!head)return;
+    const group=taskBatchGroups().find(item=>item.key===state.taskGroup);
+    if(!group)return;
+    const badge=document.createElement("div");
+    badge.className="task-ribbon";
+    badge.innerHTML=`<span class="task-chip next">${state.lang==="en"?"Active group":"当前分组"}</span><span class="chip">${group.label}</span><span class="chip">${state.lang==="en"?"People":"人物"}: ${group.count}</span>`;
+    head.appendChild(badge);
+};
+function taskGroupPrimaryAction(group){
+    const map={
+        father:{label:state.lang==="en"?"Add father":"补父亲",mode:"father"},
+        mother:{label:state.lang==="en"?"Add mother":"补母亲",mode:"mother"},
+        spouse:{label:state.lang==="en"?"Add spouse":"补配偶",mode:"spouse"},
+        summary:{label:state.lang==="en"?"Add summary":"补简介",mode:"profile-summary"},
+        source:{label:state.lang==="en"?"Add source":"补来源",mode:"profile-source"},
+        branch:{label:state.lang==="en"?"Assign branch":"分配支系",mode:"profile-branch"},
+        years:{label:state.lang==="en"?"Add years":"补年代",mode:"profile-years"}
+    };
+    return map[group]||null;
+}
+const __taskBatchRenderListPrimary=renderList;
+renderList=function(){
+    const originalFilteredPeople=filteredPeople;
+    if(state.taskGroup){
+        filteredPeople=function(){
+            return originalFilteredPeople().filter(person=>personMatchesTaskGroup(person,state.taskGroup));
+        };
+    }
+    const list=byId("people-list");
+    const people=filteredPeople().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN"));
+    if(!people.length){
+        list.innerHTML=`<div class="empty">${t("empty")}</div>`;
+        byId("count-value").textContent="0";
+        filteredPeople=originalFilteredPeople;
+        renderPeopleAdminFeatured();
+        renderPeopleAdminPriorityPanel();
+        renderTaskBatchPanel();
+        return;
+    }
+    const primaryAction=taskGroupPrimaryAction(state.taskGroup);
+    list.innerHTML=people.map(person=>{
+        const snapshot=peopleAdminRelationSnapshot(person);
+        const nextTask=(String(person.id)===String(state.lastFocusPersonId||"")&&state.returnNextTask)?{reason:state.returnNextTask,mode:null}:nextTaskForPerson(person);
+        const primaryReason=nextTask?.reason||peopleAdminPriorityText("complete");
+        const isLastFocus=String(person.id)===String(state.lastFocusPersonId||"");
+        const groupedAction=primaryAction?personRelationActionHrefWithReason(person.id,primaryAction.mode,primaryAction.label,"batch"):null;
+        return `
+            <div class="card${isLastFocus?" flash-focus":""}">
+                <div class="list-head">
+                    <div>
+                        <strong>${person.name||t("unknown")}</strong>
+                        <div class="meta">
+                            <span class="chip">#${person.id}</span>
+                            <span class="chip">${t("branch")}: ${branchName(person.branchId)}</span>
+                            <span class="chip">${t("generation")}: ${person.generationNo??person.generation??"-"}</span>
+                            ${isLastFocus?`<span class="chip">${priorityCategoryText("lastFocus")}</span>`:""}
+                            ${isLastFocus&&state.completedTask?`<span class="chip">${peopleAdminTaskRibbonText("justDone")}</span>`:""}
+                            ${state.taskGroup&&primaryAction?`<span class="task-chip current">${primaryAction.label}</span>`:""}
+                        </div>
+                        <div class="meta" style="margin-top:8px;">
+                            <span class="chip">${peopleAdminRelationText("father")}: ${snapshot.fatherName||peopleAdminRelationText("none")}</span>
+                            <span class="chip">${peopleAdminRelationText("mother")}: ${snapshot.motherName||peopleAdminRelationText("none")}</span>
+                            <span class="chip">${peopleAdminRelationText("spouses")}: ${snapshot.spouseCount}</span>
+                            <span class="chip">${peopleAdminRelationText("children")}: ${snapshot.childCount}</span>
+                        </div>
+                        ${nextTask?renderPeopleAdminTaskRibbon(person,primaryReason,nextTask):`<div class="meta" style="margin-top:8px;"><span class="chip">${peopleAdminTaskRibbonText("current")}</span><span class="chip">${peopleAdminPriorityText("complete")}</span><span class="chip">${peopleAdminTaskRibbonText("done")}</span></div>`}
+                    </div>
+                    <div class="actions">
+                        ${groupedAction?`<a class="btn btn-primary" href="${groupedAction}">${primaryAction.label}</a>`:`<a class="btn btn-primary" href="${personDetailHref(person.id)}">${t("openDetail")}</a>`}
+                        <a class="btn" href="${personDetailHref(person.id)}">${t("openEntry")}</a>
+                        ${nextTask?`<a class="btn btn-chip" href="${personRelationActionHrefWithReason(person.id,nextTask.mode,nextTask.reason,"list")}">${peopleAdminTaskRibbonText("next")}</a>`:""}
+                    </div>
+                </div>
+                <div class="meta">
+                    <span>${t("years")}: ${person.birthYear||"-"} - ${person.deathYear||"-"}</span>
+                    ${person.title?`<span>${person.title}</span>`:""}
+                    ${person.occupation?`<span>${person.occupation}</span>`:""}
+                </div>
+                ${person.biographySummary?`<div class="tip">${person.biographySummary}</div>`:""}
+            </div>
+        `;
+    }).join("");
+    byId("count-value").textContent=String(people.length);
+    filteredPeople=originalFilteredPeople;
+    renderPeopleAdminFeatured();
+    renderPeopleAdminPriorityPanel();
+    renderTaskBatchPanel();
+};
+const __batchModeRelationActionHref=personRelationActionHrefWithReason;
+personRelationActionHrefWithReason=function(personId,mode=null,reason=null,source=null){
+    const href=__batchModeRelationActionHref(personId,mode,reason,source);
+    if(!state.taskGroup)return href;
+    const joiner=href.includes("?")?"&":"?";
+    return `${href}${joiner}taskGroup=${encodeURIComponent(state.taskGroup)}`;
+};
+function batchTaskPriority(person){
+    const group=state.taskGroup;
+    if(!group)return 0;
+    const outgoing=state.relations.filter(item=>String(item.personId)===String(person.id));
+    if(group==="father")return outgoing.some(item=>item.relationType==="FATHER")?1:0;
+    if(group==="mother")return outgoing.some(item=>item.relationType==="MOTHER")?1:0;
+    if(group==="spouse")return outgoing.some(item=>item.relationType==="SPOUSE")?1:0;
+    if(group==="summary")return person.biographySummary?1:0;
+    if(group==="source")return person.source?1:0;
+    if(group==="branch")return person.branchId?1:0;
+    if(group==="years")return (person.birthYear||person.deathYear)?1:0;
+    return 0;
+}
+const __batchModeRenderList=renderList;
+renderList=function(){
+    if(!state.taskGroup){
+        __batchModeRenderList();
+        return;
+    }
+    const originalFilteredPeople=filteredPeople;
+    filteredPeople=function(){
+        return originalFilteredPeople()
+            .filter(person=>personMatchesTaskGroup(person,state.taskGroup)||String(person.id)===String(state.lastFocusPersonId||""))
+            .sort((a,b)=>{
+                const aPriority=batchTaskPriority(a);
+                const bPriority=batchTaskPriority(b);
+                if(aPriority!==bPriority)return aPriority-bPriority;
+                const aDone=String(a.id)===String(state.lastFocusPersonId||"")&&state.completedTask?1:0;
+                const bDone=String(b.id)===String(state.lastFocusPersonId||"")&&state.completedTask?1:0;
+                if(aDone!==bDone)return aDone-bDone;
+                return String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN");
+            });
+    };
+    __batchModeRenderList();
+    filteredPeople=originalFilteredPeople;
+    const list=byId("people-list");
+    if(list&&state.completedTask){
+        const hint=document.createElement("div");
+        hint.className="tip";
+        hint.style.marginBottom="12px";
+        hint.innerHTML=`<div class="list-head"><span>${state.lang==="en"?"Batch group kept active. The next suggested person is now at the top of the list.":"已保持当前批量分组，下一位建议处理的人物已顶到列表前面。"}</span></div>`;
+        list.parentNode.insertBefore(hint,list);
+        const older=list.parentNode.querySelectorAll('.tip');
+        if(older.length>1){
+            older.forEach((node,index)=>{ if(index<older.length-1 && node===hint===false){} });
+        }
+    }
+};
+const __finalBatchModeRenderList=renderList;
+renderList=function(){
+    if(!state.taskGroup){
+        document.querySelectorAll('[data-batch-return-hint="true"]').forEach(node=>node.remove());
+        __finalBatchModeRenderList();
+        return;
+    }
+    const originalFilteredPeople=filteredPeople;
+    filteredPeople=function(){
+        return originalFilteredPeople()
+            .filter(person=>personMatchesTaskGroup(person,state.taskGroup)||String(person.id)===String(state.lastFocusPersonId||""))
+            .sort((a,b)=>{
+                const aPriority=batchTaskPriority(a);
+                const bPriority=batchTaskPriority(b);
+                if(aPriority!==bPriority)return aPriority-bPriority;
+                const aDone=String(a.id)===String(state.lastFocusPersonId||"")&&state.completedTask?1:0;
+                const bDone=String(b.id)===String(state.lastFocusPersonId||"")&&state.completedTask?1:0;
+                if(aDone!==bDone)return aDone-bDone;
+                return String(a.name||"").localeCompare(String(b.name||""),"zh-Hans-CN");
+            });
+    };
+    __finalBatchModeRenderList();
+    filteredPeople=originalFilteredPeople;
+    const list=byId("people-list");
+    document.querySelectorAll('[data-batch-return-hint="true"]').forEach(node=>node.remove());
+/*
+    if(list&&state.completedTask){
+        const hint=document.createElement("div");
+        hint.setAttribute("data-batch-return-hint","true");
+        hint.className="tip";
+        hint.style.marginBottom="12px";
+        hint.innerHTML=`<div class="list-head"><span>${state.lang==="en"?"Batch group kept active. The next suggested person is now at the top of the list.":"宸蹭繚鎸佸綋鍓嶆壒閲忓垎缁勶紝涓嬩竴浣嶅缓璁鐞嗙殑浜虹墿宸查《鍒板垪琛ㄥ墠闈€?}</span></div>`;
+        list.parentNode.insertBefore(hint,list);
+    }
+};
+function batchProgressText(key){
+    const messages={
+        zh:{done:"已完成",remaining:"剩余",groupProgress:"分组进度"},
+        en:{done:"Done",remaining:"Remaining",groupProgress:"Group Progress"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+*/
+if(list&&state.completedTask){
+    const hint=document.createElement("div");
+    hint.setAttribute("data-batch-return-hint","true");
+    hint.className="tip";
+    hint.style.marginBottom="12px";
+    hint.innerHTML=`<div class="list-head"><span>${state.lang==="en"?"Batch group kept active. The next suggested person is now at the top of the list.":"已保持当前批量分组，下一位建议处理的人物已顶到列表前面。"}</span></div>`;
+    list.parentNode.insertBefore(hint,list);
+}
+function batchProgressText(key){
+    const messages={
+        zh:{done:"已完成",remaining:"剩余",groupProgress:"分组进度"},
+        en:{done:"Done",remaining:"Remaining",groupProgress:"Group Progress"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function batchGroupCounts(group){
+    const people=state.people.filter(person=>!getActiveGenealogyId||true);
+    const scoped=filteredPeople ? filteredPeople().filter(person=>personMatchesTaskGroup(person,group)||!personMatchesTaskGroup(person,group)) : state.people;
+    const current=scoped.filter(person=>personMatchesTaskGroup(person,group));
+    const all=scoped.length||current.length;
+    return {remaining:current.length,done:Math.max(0,all-current.length),total:all};
+}
+const __batchPanelWithProgress=renderTaskBatchPanel;
+renderTaskBatchPanel=function(){
+    __batchPanelWithProgress();
+    if(!state.taskGroup)return;
+    const panel=ensureTaskBatchPanel();
+    if(!panel)return;
+    const head=panel.querySelector(".list-head");
+    if(!head)return;
+    const group=taskBatchGroups().find(item=>item.key===state.taskGroup);
+    if(!group)return;
+    const allPeople=state.people.filter(person=>{
+        const gid=byId("genealogyId")?.value;
+        const bid=byId("branchId")?.value;
+        if(gid&&String(person.genealogyId)!==String(gid))return false;
+        if(bid&&String(person.branchId||"")!==String(bid))return false;
+        return true;
+    });
+    const remaining=allPeople.filter(person=>personMatchesTaskGroup(person,state.taskGroup)).length;
+    const total=allPeople.length;
+    const done=Math.max(0,total-remaining);
+    const progress=document.createElement("div");
+    progress.className="task-ribbon";
+    progress.innerHTML=`
+        <span class="task-chip current">${batchProgressText("groupProgress")}</span>
+        <span class="task-chip done">${batchProgressText("done")}: ${done}</span>
+        <span class="task-chip pending">${batchProgressText("remaining")}: ${remaining}</span>
+    `;
+    head.appendChild(progress);
+};
+function nextBatchGroupText(key){
+    const messages={
+        zh:{title:"下一分组建议",open:"打开下一组",empty:"当前已经接近清完主要分组。"},
+        en:{title:"Next Batch Suggestion",open:"Open Next Group",empty:"The main batch groups are almost cleared."}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+const __nextBatchPanelBase=renderTaskBatchPanel;
+renderTaskBatchPanel=function(){
+    __nextBatchPanelBase();
+    if(!state.taskGroup)return;
+    const panel=ensureTaskBatchPanel();
+    if(!panel)return;
+    panel.querySelectorAll('[data-next-batch="true"]').forEach(node=>node.remove());
+    const groups=taskBatchGroups().filter(group=>group.key!==state.taskGroup);
+    const nextGroup=groups[0];
+    const block=document.createElement("div");
+    block.setAttribute("data-next-batch","true");
+    block.className="task-ribbon";
+    block.style.marginTop="12px";
+    if(!nextGroup){
+        block.innerHTML=`<span class="task-chip done">${nextBatchGroupText("title")}</span><span class="chip">${nextBatchGroupText("empty")}</span>`;
+        panel.appendChild(block);
+        return;
+    }
+    block.innerHTML=`
+        <span class="task-chip next">${nextBatchGroupText("title")}</span>
+        <span class="chip">${nextGroup.label}</span>
+        <span class="chip">${state.lang==="en"?"People":"人物"}: ${nextGroup.count}</span>
+        <a class="btn btn-chip task-action" href="${nextGroup.href}">${nextBatchGroupText("open")}</a>
+    `;
+    panel.appendChild(block);
+};
+function ensurePeopleAdminPanelStyles(){
+    if(byId("people-admin-panel-style"))return;
+    const style=document.createElement("style");
+    style.id="people-admin-panel-style";
+    style.textContent=`
+        .admin-panel-collapsed .person-summary,
+        .admin-panel-collapsed .entry-list,
+        .admin-panel-collapsed .list,
+        .admin-panel-collapsed .scroll-list,
+        .admin-panel-collapsed .intro,
+        .admin-panel-collapsed .panel-intro,
+        .admin-panel-collapsed .filters,
+        .admin-panel-collapsed .metrics,
+        .admin-panel-collapsed .stats,
+        .admin-panel-collapsed .tip,
+        .admin-panel-collapsed .status,
+        .admin-panel-collapsed [data-next-batch="true"]{display:none}
+        .admin-panel-toggle{border-radius:999px}
+    `;
+    document.head.appendChild(style);
+}
+function peopleAdminPanelText(key){
+    const messages={zh:{collapse:"收起",expand:"展开"},en:{collapse:"Collapse",expand:"Expand"}};
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function bindPeopleAdminPanelToggle(panelId,titleText){
+    ensurePeopleAdminPanelStyles();
+    const panel=byId(panelId);
+    if(!panel)return;
+    let toggle=panel.querySelector('[data-admin-panel-toggle="true"]');
+    const head=panel.querySelector('.list-head')||panel.querySelector('.panel-body');
+    if(!toggle&&head){
+        toggle=document.createElement("button");
+        toggle.type="button";
+        toggle.className="btn btn-chip admin-panel-toggle";
+        toggle.setAttribute("data-admin-panel-toggle","true");
+        toggle.onclick=()=>{
+            panel.classList.toggle("admin-panel-collapsed");
+            localStorage.setItem(`gm-admin-panel-${panelId}`,panel.classList.contains("admin-panel-collapsed")?"collapsed":"expanded");
+            updatePeopleAdminPanelToggle(panelId,titleText);
+        };
+        head.appendChild(toggle);
+    }
+    const saved=localStorage.getItem(`gm-admin-panel-${panelId}`);
+    if(saved==="collapsed")panel.classList.add("admin-panel-collapsed");
+    if(saved==="expanded")panel.classList.remove("admin-panel-collapsed");
+    updatePeopleAdminPanelToggle(panelId,titleText);
+}
+function updatePeopleAdminPanelToggle(panelId,titleText){
+    const panel=byId(panelId);
+    if(!panel)return;
+    const toggle=panel.querySelector('[data-admin-panel-toggle="true"]');
+    if(!toggle)return;
+    const collapsed=panel.classList.contains("admin-panel-collapsed");
+    toggle.textContent=peopleAdminPanelText(collapsed?"expand":"collapse");
+    toggle.setAttribute("aria-label",`${toggle.textContent} ${titleText||""}`.trim());
+}
+function syncPeopleAdminPanelToggles(){
+    [
+        ["people-admin-summary","Summary"],
+        ["people-admin-featured","Featured"],
+        ["people-admin-priority","Priority"],
+        ["people-admin-branch-task","Branch Tasks"],
+        ["people-admin-task-batch","Batch Tasks"]
+    ].forEach(([id,title])=>bindPeopleAdminPanelToggle(id,title));
+}
+const __panelToggleRenderSummary=renderPeopleAdminSummary;
+renderPeopleAdminSummary=function(){
+    __panelToggleRenderSummary();
+    syncPeopleAdminPanelToggles();
+};
+const __panelToggleRenderFeatured=renderPeopleAdminFeatured;
+renderPeopleAdminFeatured=function(){
+    __panelToggleRenderFeatured();
+    syncPeopleAdminPanelToggles();
+};
+const __panelToggleRenderPriority=renderPeopleAdminPriorityPanel;
+renderPeopleAdminPriorityPanel=function(){
+    __panelToggleRenderPriority();
+    syncPeopleAdminPanelToggles();
+};
+const __panelToggleRenderBranchTask=renderBranchTaskPanel;
+renderBranchTaskPanel=function(){
+    __panelToggleRenderBranchTask();
+    syncPeopleAdminPanelToggles();
+};
+const __panelToggleRenderBatch=renderTaskBatchPanel;
+renderTaskBatchPanel=function(){
+    __panelToggleRenderBatch();
+    syncPeopleAdminPanelToggles();
+};
+function peopleAdminLegendText(key){
+    const messages={zh:{current:"当前任务",next:"下一步",pending:"待完成",done:"已完成"},en:{current:"Current Task",next:"Next Task",pending:"Pending",done:"Completed"}};
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function renderPeopleAdminLegend(){
+    ensurePeopleAdminPanelStyles();
+    let legend=byId("people-admin-task-legend");
+    const panel=byId("people-admin-summary");
+    if(!panel)return;
+    if(!legend){
+        legend=document.createElement("div");
+        legend.id="people-admin-task-legend";
+        legend.className="task-ribbon";
+        legend.style.marginTop="10px";
+        panel.appendChild(legend);
+    }
+    legend.innerHTML=`
+        <span class="task-chip current">${peopleAdminLegendText("current")}</span>
+        <span class="task-chip next">${peopleAdminLegendText("next")}</span>
+        <span class="task-chip pending">${peopleAdminLegendText("pending")}</span>
+        <span class="task-chip done">${peopleAdminLegendText("done")}</span>
+    `;
+}
+const __peopleAdminLegendRenderSummary=renderPeopleAdminSummary;
+renderPeopleAdminSummary=function(){
+    __peopleAdminLegendRenderSummary();
+    renderPeopleAdminLegend();
+};
+function peopleAdminFeedbackText(key){
+    const messages={
+        zh:{title:"任务回流",done:"刚完成",next:"下一步",fromDetail:"你刚从人物详情返回，当前列表已保持原任务上下文。",dismiss:"关闭"},
+        en:{title:"Task Return Flow",done:"Just completed",next:"Next",fromDetail:"You just returned from person detail, and the current list kept the same task context.",dismiss:"Dismiss"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+function renderPeopleAdminFeedbackTrail(){
+    let bar=byId("people-admin-feedback-trail");
+    if(!state.completedTask&&!state.returnNextTask){
+        if(bar)bar.remove();
+        return;
+    }
+    const target=byId("people-admin-summary");
+    if(!target)return;
+    if(!bar){
+        bar=document.createElement("div");
+        bar.id="people-admin-feedback-trail";
+        bar.className="person-summary";
+        target.parentNode.insertBefore(bar,target);
+    }
+    bar.innerHTML=`
+        <div class="list-head">
+            <div>
+                <h3>${peopleAdminFeedbackText("title")}</h3>
+                <p class="intro">${peopleAdminFeedbackText("fromDetail")}</p>
+            </div>
+            <button class="btn btn-chip" type="button" onclick="dismissPeopleAdminFeedbackTrail()">${peopleAdminFeedbackText("dismiss")}</button>
+        </div>
+        <div class="task-ribbon">
+            ${state.completedTask?`<span class="task-chip done">${peopleAdminFeedbackText("done")}</span><span class="chip">${state.completedTask}</span>`:""}
+            ${state.returnNextTask?`<span class="task-chip next">${peopleAdminFeedbackText("next")}</span><span class="chip">${state.returnNextTask}</span>`:""}
+        </div>
+    `;
+}
+function dismissPeopleAdminFeedbackTrail(){
+    byId("people-admin-feedback-trail")?.remove();
+}
+function inferPeopleAdminFeedbackMode(reason){
+    const text=String(reason||"").toLowerCase();
+    if(!text)return state.quickRelation||null;
+    if(text.includes("父")||text.includes("father"))return "father";
+    if(text.includes("母")||text.includes("mother"))return "mother";
+    if(text.includes("配偶")||text.includes("spouse"))return "spouse";
+    if(text.includes("简介")||text.includes("summary"))return "profile-summary";
+    if(text.includes("来源")||text.includes("source"))return "profile-source";
+    if(text.includes("支系")||text.includes("branch"))return "profile-branch";
+    if(text.includes("生卒")||text.includes("年代")||text.includes("years"))return "profile-years";
+    return state.quickRelation||null;
+}
+function peopleAdminFeedbackActionText(key){
+    const messages={
+        zh:{continue:"继续下一步",person:"打开人物",home:"返回首页"},
+        en:{continue:"Continue Next",person:"Open Person",home:"Back Home"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+const __peopleAdminFeedbackTrailBase=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    const hidden=localStorage.getItem("gm-feedback-people-admin")==="hidden";
+    if(hidden&&(state.completedTask||state.returnNextTask)){
+        let restore=byId("people-admin-feedback-restore");
+        const target=byId("people-admin-summary");
+        if(!restore&&target){
+            restore=document.createElement("div");
+            restore.id="people-admin-feedback-restore";
+            restore.className="task-ribbon";
+            restore.style.marginBottom="12px";
+            target.parentNode.insertBefore(restore,target);
+        }
+        if(restore){
+            restore.innerHTML=`
+                <span class="chip">${peopleAdminFeedbackText("title")}</span>
+                <button class="btn btn-chip" type="button" onclick="restorePeopleAdminFeedbackTrail()">${peopleAdminFeedbackText("dismiss")}</button>
+            `;
+        }
+        byId("people-admin-feedback-trail")?.remove();
+        return;
+    }
+    byId("people-admin-feedback-restore")?.remove();
+    __peopleAdminFeedbackTrailBase();
+    const bar=byId("people-admin-feedback-trail");
+    if(!bar||(!state.completedTask&&!state.returnNextTask))return;
+    let actions=bar.querySelector('[data-feedback-actions="true"]');
+    if(!actions){
+        actions=document.createElement("div");
+        actions.className="actions";
+        actions.style.marginTop="12px";
+        actions.setAttribute("data-feedback-actions","true");
+        bar.appendChild(actions);
+    }
+    const activeReason=state.returnNextTask||state.completedTask||state.focusReason||"";
+    const activeMode=inferPeopleAdminFeedbackMode(activeReason);
+    const homeQuery=new URLSearchParams();
+    if(state.lastFocusPersonId)homeQuery.set("personId",String(state.lastFocusPersonId));
+    if(state.completedTask)homeQuery.set("completedTask",state.completedTask);
+    if(state.returnNextTask)homeQuery.set("nextTask",state.returnNextTask);
+    actions.innerHTML=`
+        ${state.lastFocusPersonId&&activeReason?`<a class="btn btn-primary" href="${personRelationActionHrefWithReason(state.lastFocusPersonId,activeMode,activeReason,state.focusSource||"people-admin")}">${peopleAdminFeedbackActionText("continue")}</a>`:""}
+        ${state.lastFocusPersonId?`<a class="btn btn-chip" href="person-entry.html?personId=${state.lastFocusPersonId}">${peopleAdminFeedbackActionText("person")}</a>`:""}
+        <a class="btn btn-chip" href="/${homeQuery.toString()?`?${homeQuery.toString()}`:""}">${peopleAdminFeedbackActionText("home")}</a>
+    `;
+};
+const __peopleAdminDismissBase=dismissPeopleAdminFeedbackTrail;
+dismissPeopleAdminFeedbackTrail=function(){
+    localStorage.setItem("gm-feedback-people-admin","hidden");
+    __peopleAdminDismissBase();
+    renderPeopleAdminFeedbackTrail();
+};
+function restorePeopleAdminFeedbackTrail(){
+    localStorage.setItem("gm-feedback-people-admin","visible");
+    renderPeopleAdminFeedbackTrail();
+}
+const __peopleAdminFeedbackSummary=renderPeopleAdminSummary;
+renderPeopleAdminSummary=function(){
+    __peopleAdminFeedbackSummary();
+    renderPeopleAdminFeedbackTrail();
+};
+const __peopleAdminFeedbackApply=applyPeopleAdminQueryParams;
+applyPeopleAdminQueryParams=function(){
+    __peopleAdminFeedbackApply();
+    renderPeopleAdminFeedbackTrail();
+};
+function peopleAdminFeedbackRestoreText(key){
+    const messages={
+        zh:{hint:"任务反馈链已收起",action:"恢复反馈链"},
+        en:{hint:"Task feedback chain hidden",action:"Restore Feedback"}
+    };
+    return messages[state.lang==="en"?"en":"zh"][key]||key;
+}
+const __peopleAdminFeedbackRestoreRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackRestoreRender();
+    const restore=byId("people-admin-feedback-restore");
+    if(!restore)return;
+    restore.className="task-ribbon";
+    restore.innerHTML=`
+        <span class="task-chip current">${peopleAdminFeedbackText("title")}</span>
+        <span class="chip">${peopleAdminFeedbackRestoreText("hint")}</span>
+        <button class="btn btn-chip" type="button" onclick="restorePeopleAdminFeedbackTrail()">${peopleAdminFeedbackRestoreText("action")}</button>
+    `;
+};
+function ensurePeopleAdminFeedbackFlashStyle(){
+    if(byId("people-admin-feedback-flash-style"))return;
+    const style=document.createElement("style");
+    style.id="people-admin-feedback-flash-style";
+    style.textContent=`
+        .feedback-source-chip{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:6px 10px;
+            border-radius:999px;
+            background:rgba(15,118,110,.10);
+            color:#0f766e;
+            border:1px solid rgba(15,118,110,.14);
+            font-weight:700;
+        }
+        .feedback-flash{
+            box-shadow:0 0 0 2px rgba(220,122,44,.16),0 14px 36px rgba(220,122,44,.12);
+            transform:translateY(-2px);
+            transition:box-shadow .25s ease,transform .25s ease;
+        }
+    `;
+    document.head.appendChild(style);
+}
+function flashPeopleAdminFeedbackTrail(){
+    ensurePeopleAdminFeedbackFlashStyle();
+    const target=byId("people-admin-feedback-trail")||byId("people-admin-feedback-restore");
+    if(!target)return;
+    target.classList.remove("feedback-flash");
+    void target.offsetWidth;
+    target.classList.add("feedback-flash");
+    setTimeout(()=>target.classList.remove("feedback-flash"),1200);
+}
+const __peopleAdminFeedbackFlashRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackFlashRender();
+    const sourceMap=state.lang==="en"
+        ? {
+            home:"From Home Dashboard",
+            priority:"From Priority Queue",
+            batch:"From Batch Queue",
+            branch:"From Branch Tasks",
+            list:"From People List",
+            "people-admin":"From People Admin",
+            default:"From Person Detail"
+        }
+        : {
+            home:"来自首页工作台",
+            priority:"来自优先任务",
+            batch:"来自批量整理",
+            branch:"来自支系待办",
+            list:"来自人物列表",
+            "people-admin":"来自人物后台",
+            default:"来自人物详情页"
+        };
+    const sourceLabel=sourceMap[state.focusSource]||sourceMap.default;
+    const bar=byId("people-admin-feedback-trail");
+    const restore=byId("people-admin-feedback-restore");
+    if(bar){
+        const ribbon=bar.querySelector(".task-ribbon");
+        if(ribbon&&!ribbon.querySelector('[data-feedback-source="true"]')){
+            ribbon.insertAdjacentHTML("afterbegin",`<span class="feedback-source-chip" data-feedback-source="true">${sourceLabel}</span>`);
+        }
+    }
+    if(restore&&!restore.querySelector('[data-feedback-source="true"]')){
+        restore.insertAdjacentHTML("afterbegin",`<span class="feedback-source-chip" data-feedback-source="true">${sourceLabel}</span>`);
+    }
+    if(state.completedTask||state.returnNextTask){
+        setTimeout(flashPeopleAdminFeedbackTrail,60);
+    }
+};
+const __peopleAdminFeedbackSourcePrefixRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackSourcePrefixRender();
+    const chip=document.querySelector('#people-admin-feedback-trail [data-feedback-source="true"], #people-admin-feedback-restore [data-feedback-source="true"]');
+    if(!chip)return;
+    const raw=chip.textContent||"";
+    const cleaned=raw.replace(/^Source\s*[·:：-]\s*/i,"").replace(/^来源\s*[·:：-]\s*/,"").trim();
+    chip.textContent=`${state.lang==="en"?"Source":"来源"} · ${cleaned}`;
+};
+window.dismissPeopleAdminFeedbackTrail=dismissPeopleAdminFeedbackTrail;
+window.restorePeopleAdminFeedbackTrail=restorePeopleAdminFeedbackTrail;
+setTimeout(applyPeopleAdminQueryParams,120);
+
+function ensurePeopleAdminFeedbackGroupingStyle(){
+    const styleId="people-admin-feedback-group-style";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .feedback-chain-ribbon{margin-top:10px}
+        .feedback-chain-shell .feedback-chain-actions{
+            margin-top:14px !important;
+            padding-top:10px;
+            border-top:1px solid rgba(15,23,42,.08);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackFinalGroupingRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackFinalGroupingRender();
+    ensurePeopleAdminFeedbackGroupingStyle();
+    [byId("people-admin-feedback-trail"),byId("people-admin-feedback-restore")].filter(Boolean).forEach(node=>{
+        node.classList.add("feedback-chain-shell");
+        const ribbon=node.querySelector(".task-ribbon");
+        if(ribbon)ribbon.classList.add("feedback-chain-ribbon");
+        const actions=node.querySelector(".actions");
+        if(actions)actions.classList.add("feedback-chain-actions");
+    });
+};
+
+function rankPeopleAdminFeedbackAction(label){
+    const text=String(label||"").toLowerCase();
+    if(text.includes("continue")||text.includes("继续"))return 1;
+    if(text.includes("person")||text.includes("人物"))return 2;
+    if(text.includes("admin")||text.includes("后台"))return 3;
+    if(text.includes("home")||text.includes("首页"))return 4;
+    return 9;
+}
+const __peopleAdminFeedbackActionOrderRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackActionOrderRender();
+    document.querySelectorAll('#people-admin-feedback-trail .feedback-chain-actions, #people-admin-feedback-restore .feedback-chain-actions').forEach(actions=>{
+        Array.from(actions.children)
+            .sort((a,b)=>rankPeopleAdminFeedbackAction(a.textContent)-rankPeopleAdminFeedbackAction(b.textContent))
+            .forEach(node=>actions.appendChild(node));
+    });
+};
+
+function ensurePeopleAdminFeedbackPrimaryStyle(){
+    const styleId="people-admin-feedback-primary-style";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-actions .feedback-primary-action{
+            background:linear-gradient(135deg,#d97706,#b45309);
+            color:#fff;
+            border-color:#b45309;
+            box-shadow:0 10px 24px rgba(180,83,9,.18);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackPrimaryRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackPrimaryRender();
+    ensurePeopleAdminFeedbackPrimaryStyle();
+    document.querySelectorAll('#people-admin-feedback-trail .feedback-chain-actions, #people-admin-feedback-restore .feedback-chain-actions').forEach(actions=>{
+        Array.from(actions.children).forEach((node,index)=>{
+            node.classList.toggle("feedback-primary-action",index===0);
+        });
+    });
+};
+
+function ensurePeopleAdminFeedbackSecondaryStyle(){
+    const styleId="people-admin-feedback-secondary-style";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-actions .feedback-secondary-action{
+            background:rgba(248,250,252,.92);
+            color:#334155;
+            border-color:rgba(148,163,184,.35);
+            box-shadow:none;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackSecondaryRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackSecondaryRender();
+    ensurePeopleAdminFeedbackSecondaryStyle();
+    document.querySelectorAll('#people-admin-feedback-trail .feedback-chain-actions, #people-admin-feedback-restore .feedback-chain-actions').forEach(actions=>{
+        Array.from(actions.children).forEach((node,index)=>{
+            node.classList.toggle("feedback-secondary-action",index>0);
+        });
+    });
+};
+
+function ensurePeopleAdminFeedbackButtonMetrics(){
+    const styleId="people-admin-feedback-button-metrics";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-actions{
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            align-items:center;
+        }
+        .feedback-chain-actions > .btn,
+        .feedback-chain-actions > button{
+            min-width:132px;
+            justify-content:center;
+            text-align:center;
+            padding-left:14px;
+            padding-right:14px;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackButtonMetricsRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackButtonMetricsRender();
+    ensurePeopleAdminFeedbackButtonMetrics();
+};
+
+function ensurePeopleAdminFeedbackStateRhythm(){
+    const styleId="people-admin-feedback-state-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell[data-feedback-state="full"]{
+            min-height:132px;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"]{
+            min-height:68px;
+            padding-top:6px;
+            padding-bottom:6px;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon{
+            margin-top:0;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackStateRhythmRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackStateRhythmRender();
+    ensurePeopleAdminFeedbackStateRhythm();
+    const full=byId("people-admin-feedback-trail");
+    const restore=byId("people-admin-feedback-restore");
+    if(full)full.setAttribute("data-feedback-state",full.querySelector(".feedback-chain-actions")?"full":"compact");
+    if(restore)restore.setAttribute("data-feedback-state","restore");
+};
+
+function ensurePeopleAdminFeedbackFourStageStyle(){
+    const styleId="people-admin-feedback-four-stage";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .list-head{margin-bottom:10px}
+        .feedback-chain-shell .feedback-source-chip{margin-bottom:10px}
+        .feedback-chain-shell .feedback-chain-ribbon{margin-bottom:12px}
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-source-chip,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon{margin-bottom:0}
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackFourStageRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackFourStageRender();
+    ensurePeopleAdminFeedbackFourStageStyle();
+};
+
+function ensurePeopleAdminFeedbackCardSkin(){
+    const styleId="people-admin-feedback-card-skin";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell{
+            border:1px solid rgba(148,163,184,.22);
+            border-radius:18px;
+            background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+            box-shadow:0 14px 34px rgba(15,23,42,.06);
+            overflow:hidden;
+        }
+        .feedback-chain-shell .panel-body,
+        .feedback-chain-shell.person-summary{
+            padding:18px 18px 16px;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackCardSkinRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackCardSkinRender();
+    ensurePeopleAdminFeedbackCardSkin();
+};
+
+function ensurePeopleAdminFeedbackHeaderRhythm(){
+    const styleId="people-admin-feedback-header-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .list-head{
+            align-items:flex-start;
+            gap:12px;
+        }
+        .feedback-chain-shell .list-head > div:first-child{
+            display:grid;
+            gap:6px;
+            flex:1 1 auto;
+            min-width:0;
+        }
+        .feedback-chain-shell .list-head h2,
+        .feedback-chain-shell .list-head h3{
+            margin:0;
+            line-height:1.2;
+        }
+        .feedback-chain-shell .panel-intro,
+        .feedback-chain-shell .intro{
+            margin:0;
+            line-height:1.6;
+        }
+        .feedback-chain-shell .list-head > .btn,
+        .feedback-chain-shell .list-head > button{
+            align-self:flex-start;
+            min-width:92px;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackHeaderRhythmRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackHeaderRhythmRender();
+    ensurePeopleAdminFeedbackHeaderRhythm();
+};
+
+function ensurePeopleAdminFeedbackMobileRhythm(){
+    const styleId="people-admin-feedback-mobile-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @media (max-width: 760px){
+            .feedback-chain-shell .list-head{
+                flex-direction:column;
+                align-items:stretch;
+            }
+            .feedback-chain-shell .list-head > .btn,
+            .feedback-chain-shell .list-head > button{
+                width:100%;
+                min-width:0;
+            }
+            .feedback-chain-shell .feedback-chain-actions{
+                display:grid;
+                grid-template-columns:1fr;
+                gap:8px;
+            }
+            .feedback-chain-shell .feedback-chain-actions > .btn,
+            .feedback-chain-shell .feedback-chain-actions > button{
+                width:100%;
+                min-width:0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackMobileRhythmRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackMobileRhythmRender();
+    ensurePeopleAdminFeedbackMobileRhythm();
+};
+
+function ensurePeopleAdminFeedbackRestoreMobileStyle(){
+    const styleId="people-admin-feedback-restore-mobile";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @media (max-width: 760px){
+            .feedback-chain-shell[data-feedback-state="restore"]{
+                min-height:0;
+            }
+            .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon{
+                display:flex;
+                flex-wrap:nowrap;
+                align-items:center;
+                gap:8px;
+                overflow-x:auto;
+                padding-bottom:2px;
+            }
+            .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn,
+            .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button{
+                width:auto;
+                min-width:112px;
+                flex:0 0 auto;
+            }
+            .feedback-chain-shell[data-feedback-state="restore"] .feedback-source-chip,
+            .feedback-chain-shell[data-feedback-state="restore"] .chip{
+                flex:0 0 auto;
+                white-space:nowrap;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackRestoreMobileRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackRestoreMobileRender();
+    ensurePeopleAdminFeedbackRestoreMobileStyle();
+};
+function ensurePeopleAdminFeedbackMicroInteractions(){
+    const styleId="people-admin-feedback-micro-interactions";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell{
+            transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease;
+        }
+        .feedback-chain-shell:hover,
+        .feedback-chain-shell:focus-within{
+            border-color:rgba(217,119,6,.22);
+            box-shadow:0 18px 38px rgba(15,23,42,.10);
+            transform:translateY(-1px);
+        }
+        .feedback-chain-shell .feedback-chain-actions > .btn,
+        .feedback-chain-shell .feedback-chain-actions > button,
+        .feedback-chain-shell .list-head > .btn,
+        .feedback-chain-shell .list-head > button{
+            transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+        }
+        .feedback-chain-shell .feedback-chain-actions > .btn:hover,
+        .feedback-chain-shell .feedback-chain-actions > button:hover,
+        .feedback-chain-shell .feedback-chain-actions > .btn:focus-visible,
+        .feedback-chain-shell .feedback-chain-actions > button:focus-visible,
+        .feedback-chain-shell .list-head > .btn:hover,
+        .feedback-chain-shell .list-head > button:hover,
+        .feedback-chain-shell .list-head > .btn:focus-visible,
+        .feedback-chain-shell .list-head > button:focus-visible{
+            transform:translateY(-1px);
+            box-shadow:0 8px 18px rgba(15,23,42,.10);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackMicroFinalRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackMicroFinalRender();
+    ensurePeopleAdminFeedbackMicroInteractions();
+};
+function ensurePeopleAdminFeedbackSectionDivider(){
+    const styleId="people-admin-feedback-section-divider";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .list-head{
+            position:relative;
+            margin-bottom:14px;
+            padding-bottom:12px;
+        }
+        .feedback-chain-shell .list-head::after{
+            content:"";
+            position:absolute;
+            left:0;
+            right:0;
+            bottom:0;
+            height:1px;
+            background:linear-gradient(90deg, rgba(217,119,6,.20), rgba(217,119,6,.05) 55%, transparent);
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .list-head{
+            margin-bottom:0;
+            padding-bottom:0;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .list-head::after{
+            display:none;
+        }
+        .feedback-chain-shell .feedback-source-row,
+        .feedback-chain-shell .feedback-chain-state,
+        .feedback-chain-shell .feedback-chain-actions{
+            position:relative;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackDividerFinalRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackDividerFinalRender();
+    ensurePeopleAdminFeedbackSectionDivider();
+};
+function ensurePeopleAdminFeedbackActionDivider(){
+    const styleId="people-admin-feedback-action-divider";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .feedback-chain-state{
+            margin-bottom:14px;
+            padding-bottom:12px;
+        }
+        .feedback-chain-shell .feedback-chain-state::after{
+            content:"";
+            display:block;
+            margin-top:12px;
+            height:1px;
+            background:linear-gradient(90deg, rgba(148,163,184,.20), rgba(148,163,184,.08) 60%, transparent);
+        }
+        .feedback-chain-shell .feedback-chain-actions{
+            padding-top:0;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-state,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-actions{
+            margin-bottom:0;
+            padding-bottom:0;
+            padding-top:0;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-state::after{
+            display:none;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackActionDividerRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackActionDividerRender();
+    ensurePeopleAdminFeedbackActionDivider();
+};
+function ensurePeopleAdminFeedbackStateChipGroup(){
+    const styleId="people-admin-feedback-state-chip-group";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .feedback-chain-state{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+            align-items:center;
+        }
+        .feedback-chain-shell .feedback-chain-state .task-chip,
+        .feedback-chain-shell .feedback-chain-state .chip{
+            min-height:30px;
+            padding:6px 12px;
+            border-radius:999px;
+            border:1px solid rgba(148,163,184,.14);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.42);
+            font-size:12px;
+            line-height:1;
+            letter-spacing:.01em;
+        }
+        .feedback-chain-shell .feedback-chain-state .chip{
+            background:rgba(255,255,255,.76);
+            color:#6b5a4b;
+            font-weight:700;
+        }
+        .feedback-chain-shell .feedback-chain-state .task-chip.current{
+            background:rgba(181,120,32,.14);
+            border-color:rgba(181,120,32,.18);
+            color:#8a4b08;
+        }
+        .feedback-chain-shell .feedback-chain-state .task-chip.next{
+            background:rgba(35,99,180,.12);
+            border-color:rgba(35,99,180,.16);
+            color:#1d4e89;
+        }
+        .feedback-chain-shell .feedback-chain-state .task-chip.pending{
+            background:rgba(180,83,9,.12);
+            border-color:rgba(180,83,9,.16);
+            color:#9a3412;
+        }
+        .feedback-chain-shell .feedback-chain-state .task-chip.done{
+            background:rgba(22,101,52,.12);
+            border-color:rgba(22,101,52,.16);
+            color:#166534;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackStateChipRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackStateChipRender();
+    ensurePeopleAdminFeedbackStateChipGroup();
+};
+function ensurePeopleAdminFeedbackActionBaseline(){
+    const styleId="people-admin-feedback-action-baseline";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .feedback-chain-state,
+        .feedback-chain-shell .feedback-chain-actions{
+            align-items:center;
+        }
+        .feedback-chain-shell .feedback-chain-state{
+            min-height:34px;
+        }
+        .feedback-chain-shell .feedback-chain-actions{
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            row-gap:10px;
+        }
+        .feedback-chain-shell .feedback-chain-actions > .btn,
+        .feedback-chain-shell .feedback-chain-actions > button{
+            min-height:34px;
+            align-self:center;
+        }
+        @media (max-width: 760px){
+            .feedback-chain-shell .feedback-chain-actions{
+                display:grid;
+                grid-template-columns:1fr;
+                gap:8px;
+            }
+            .feedback-chain-shell .feedback-chain-actions > .btn,
+            .feedback-chain-shell .feedback-chain-actions > button{
+                min-height:40px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackActionBaselineRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackActionBaselineRender();
+    ensurePeopleAdminFeedbackActionBaseline();
+};
+function ensurePeopleAdminFeedbackHeaderHierarchy(){
+    const styleId="people-admin-feedback-header-hierarchy";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .list-head > div:first-child{
+            display:grid;
+            gap:4px;
+            min-width:0;
+        }
+        .feedback-chain-shell .list-head h2,
+        .feedback-chain-shell .list-head h3{
+            margin:0;
+            color:#4a2c18;
+            font-size:18px;
+            line-height:1.2;
+            letter-spacing:-0.01em;
+        }
+        .feedback-chain-shell .list-head .panel-intro,
+        .feedback-chain-shell .list-head .intro{
+            margin:0;
+            color:#7b6858;
+            font-size:13px;
+            line-height:1.55;
+            max-width:58ch;
+        }
+        .feedback-chain-shell .list-head > .btn.btn-chip,
+        .feedback-chain-shell .list-head > button.btn-chip{
+            min-height:32px;
+            padding:0 12px;
+            align-self:start;
+            background:rgba(255,255,255,.82);
+            border-color:rgba(148,163,184,.18);
+            color:#6f6055;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.48);
+        }
+        @media (max-width: 760px){
+            .feedback-chain-shell .list-head > .btn.btn-chip,
+            .feedback-chain-shell .list-head > button.btn-chip{
+                width:auto;
+                justify-self:start;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackHeaderHierarchyRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackHeaderHierarchyRender();
+    ensurePeopleAdminFeedbackHeaderHierarchy();
+};
+function ensurePeopleAdminFeedbackRestoreHeaderHierarchy(){
+    const styleId="people-admin-feedback-restore-header-hierarchy";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon{
+            display:flex;
+            flex-wrap:wrap;
+            align-items:center;
+            gap:10px;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon .task-chip.current{
+            min-height:32px;
+            padding:6px 12px;
+            background:rgba(181,120,32,.12);
+            border:1px solid rgba(181,120,32,.16);
+            color:#8a4b08;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.42);
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon .chip{
+            min-height:32px;
+            padding:6px 12px;
+            background:rgba(255,255,255,.72);
+            border:1px solid rgba(148,163,184,.14);
+            color:#7b6858;
+            font-weight:600;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button.btn-chip{
+            min-height:32px;
+            padding:0 12px;
+            background:rgba(255,255,255,.84);
+            border-color:rgba(148,163,184,.18);
+            color:#6f6055;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.48);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackRestoreHeaderRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackRestoreHeaderRender();
+    ensurePeopleAdminFeedbackRestoreHeaderHierarchy();
+};
+function ensurePeopleAdminFeedbackRestoreMicroInteractions(){
+    const styleId="people-admin-feedback-restore-micro-interactions";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell[data-feedback-state="restore"]{
+            transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease,background-color .22s ease;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"]:hover,
+        .feedback-chain-shell[data-feedback-state="restore"]:focus-within{
+            border-color:rgba(217,119,6,.20);
+            box-shadow:0 12px 28px rgba(15,23,42,.08);
+            transform:translateY(-1px);
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button{
+            transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background-color .18s ease;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn:hover,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button:hover,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn:focus-visible,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button:focus-visible{
+            transform:translateY(-1px);
+            box-shadow:0 8px 18px rgba(15,23,42,.08);
+            border-color:rgba(217,119,6,.18);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackRestoreMicroRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackRestoreMicroRender();
+    ensurePeopleAdminFeedbackRestoreMicroInteractions();
+};
+function ensurePeopleAdminFeedbackMotionRhythm(){
+    const styleId="people-admin-feedback-motion-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell{
+            --feedback-motion-ease:cubic-bezier(.22,1,.36,1);
+            --feedback-motion-soft:cubic-bezier(.16,1,.3,1);
+            --feedback-motion-base:.24s;
+            --feedback-motion-fast:.18s;
+            transition:
+                box-shadow var(--feedback-motion-base) var(--feedback-motion-ease),
+                transform var(--feedback-motion-base) var(--feedback-motion-ease),
+                border-color var(--feedback-motion-base) var(--feedback-motion-ease),
+                background-color var(--feedback-motion-base) var(--feedback-motion-ease);
+        }
+        .feedback-chain-shell[data-feedback-state="restore"]{
+            transition:
+                box-shadow var(--feedback-motion-base) var(--feedback-motion-ease),
+                transform var(--feedback-motion-base) var(--feedback-motion-ease),
+                border-color var(--feedback-motion-base) var(--feedback-motion-ease),
+                background-color var(--feedback-motion-base) var(--feedback-motion-ease);
+        }
+        .feedback-chain-shell .feedback-chain-actions > .btn,
+        .feedback-chain-shell .feedback-chain-actions > button,
+        .feedback-chain-shell .list-head > .btn,
+        .feedback-chain-shell .list-head > button,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button,
+        .feedback-chain-shell .feedback-chain-state .task-chip,
+        .feedback-chain-shell .feedback-chain-state .chip,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon .task-chip,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon .chip{
+            transition:
+                transform var(--feedback-motion-fast) var(--feedback-motion-soft),
+                box-shadow var(--feedback-motion-fast) var(--feedback-motion-soft),
+                border-color var(--feedback-motion-fast) var(--feedback-motion-soft),
+                background-color var(--feedback-motion-fast) var(--feedback-motion-soft),
+                color var(--feedback-motion-fast) var(--feedback-motion-soft);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackMotionRhythmRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackMotionRhythmRender();
+    ensurePeopleAdminFeedbackMotionRhythm();
+};
+function ensurePeopleAdminFeedbackReturnFlashRhythm(){
+    const styleId="people-admin-feedback-return-flash-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @keyframes peopleAdminFeedbackReturnFlash{
+            0%{
+                box-shadow:0 0 0 0 rgba(217,119,6,0),0 8px 18px rgba(15,23,42,.04);
+                transform:translateY(0);
+                border-color:rgba(217,119,6,.12);
+            }
+            28%{
+                box-shadow:0 0 0 3px rgba(217,119,6,.14),0 18px 36px rgba(217,119,6,.12);
+                transform:translateY(-2px);
+                border-color:rgba(217,119,6,.24);
+            }
+            68%{
+                box-shadow:0 0 0 1px rgba(217,119,6,.08),0 14px 28px rgba(15,23,42,.08);
+                transform:translateY(-1px);
+                border-color:rgba(217,119,6,.18);
+            }
+            100%{
+                box-shadow:0 10px 24px rgba(15,23,42,.06);
+                transform:translateY(0);
+                border-color:rgba(217,119,6,.16);
+            }
+        }
+        .feedback-chain-shell.feedback-flash{
+            animation:peopleAdminFeedbackReturnFlash .92s var(--feedback-motion-ease, cubic-bezier(.22,1,.36,1)) 1;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"].feedback-flash{
+            animation:peopleAdminFeedbackReturnFlash .92s var(--feedback-motion-ease, cubic-bezier(.22,1,.36,1)) 1;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackReturnFlashRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackReturnFlashRender();
+    ensurePeopleAdminFeedbackReturnFlashRhythm();
+};
+function ensurePeopleAdminFeedbackAccentLinkage(){
+    const styleId="people-admin-feedback-accent-linkage";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @keyframes peopleAdminFeedbackChipPulse{
+            0%{
+                transform:translateY(0) scale(1);
+                box-shadow:inset 0 1px 0 rgba(255,255,255,.42);
+            }
+            40%{
+                transform:translateY(-1px) scale(1.02);
+                box-shadow:0 8px 18px rgba(217,119,6,.12), inset 0 1px 0 rgba(255,255,255,.50);
+            }
+            100%{
+                transform:translateY(0) scale(1);
+                box-shadow:inset 0 1px 0 rgba(255,255,255,.42);
+            }
+        }
+        @keyframes peopleAdminFeedbackButtonPulse{
+            0%{
+                transform:translateY(0) scale(1);
+                box-shadow:0 0 0 rgba(217,119,6,0);
+            }
+            42%{
+                transform:translateY(-1px) scale(1.015);
+                box-shadow:0 10px 22px rgba(217,119,6,.16);
+            }
+            100%{
+                transform:translateY(0) scale(1);
+                box-shadow:0 6px 14px rgba(15,23,42,.06);
+            }
+        }
+        .feedback-chain-shell.feedback-flash .feedback-chain-state .task-chip,
+        .feedback-chain-shell.feedback-flash[data-feedback-state="restore"] .feedback-chain-ribbon .task-chip.current{
+            animation:peopleAdminFeedbackChipPulse .68s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) both;
+        }
+        .feedback-chain-shell.feedback-flash .feedback-chain-state .chip,
+        .feedback-chain-shell.feedback-flash[data-feedback-state="restore"] .feedback-chain-ribbon .chip{
+            animation:peopleAdminFeedbackChipPulse .68s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) .04s both;
+        }
+        .feedback-chain-shell.feedback-flash .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell.feedback-flash[data-feedback-state="restore"] .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell.feedback-flash[data-feedback-state="restore"] .feedback-chain-ribbon > button.btn-chip{
+            animation:peopleAdminFeedbackButtonPulse .76s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) .09s both;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackAccentLinkageRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackAccentLinkageRender();
+    ensurePeopleAdminFeedbackAccentLinkage();
+};
+function ensurePeopleAdminFeedbackPresenceRhythm(){
+    const styleId="people-admin-feedback-presence-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @keyframes peopleAdminFeedbackCardEnter{
+            0%{
+                opacity:0;
+                transform:translateY(8px) scale(.992);
+                box-shadow:0 4px 12px rgba(15,23,42,.02);
+            }
+            100%{
+                opacity:1;
+                transform:translateY(0) scale(1);
+                box-shadow:0 10px 24px rgba(15,23,42,.06);
+            }
+        }
+        @keyframes peopleAdminFeedbackRestoreEnter{
+            0%{
+                opacity:0;
+                transform:translateY(6px) scale(.996);
+                box-shadow:0 3px 10px rgba(15,23,42,.02);
+            }
+            100%{
+                opacity:1;
+                transform:translateY(0) scale(1);
+                box-shadow:0 8px 18px rgba(15,23,42,.05);
+            }
+        }
+        .feedback-chain-shell[data-feedback-state="full"]{
+            animation:peopleAdminFeedbackCardEnter .28s var(--feedback-motion-ease, cubic-bezier(.22,1,.36,1)) both;
+            transform-origin:top center;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"]{
+            animation:peopleAdminFeedbackRestoreEnter .24s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) both;
+            transform-origin:top center;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackPresenceRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackPresenceRender();
+    ensurePeopleAdminFeedbackPresenceRhythm();
+};
+function ensurePeopleAdminFeedbackActionStagger(){
+    const styleId="people-admin-feedback-action-stagger";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @keyframes peopleAdminFeedbackPrimaryActionEnter{
+            0%{
+                opacity:0;
+                transform:translateY(6px) scale(.985);
+            }
+            100%{
+                opacity:1;
+                transform:translateY(0) scale(1);
+            }
+        }
+        @keyframes peopleAdminFeedbackSecondaryActionEnter{
+            0%{
+                opacity:0;
+                transform:translateY(8px);
+            }
+            100%{
+                opacity:1;
+                transform:translateY(0);
+            }
+        }
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-chain-actions > .feedback-primary-action{
+            animation:peopleAdminFeedbackPrimaryActionEnter .26s var(--feedback-motion-ease, cubic-bezier(.22,1,.36,1)) .04s both;
+        }
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-chain-actions > .btn:not(.feedback-primary-action),
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-chain-actions > button:not(.feedback-primary-action){
+            animation:peopleAdminFeedbackSecondaryActionEnter .24s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) .10s both;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button{
+            animation:peopleAdminFeedbackPrimaryActionEnter .24s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) .06s both;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackActionStaggerRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackActionStaggerRender();
+    ensurePeopleAdminFeedbackActionStagger();
+};
+function ensurePeopleAdminFeedbackSectionEntrance(){
+    const styleId="people-admin-feedback-section-entrance";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        @keyframes peopleAdminFeedbackSectionEnter{
+            0%{
+                opacity:0;
+                transform:translateY(6px);
+            }
+            100%{
+                opacity:1;
+                transform:translateY(0);
+            }
+        }
+        .feedback-chain-shell[data-feedback-state="full"] .list-head{
+            animation:peopleAdminFeedbackSectionEnter .22s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) both;
+        }
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-source-chip,
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-chain-state,
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-chain-ribbon{
+            animation:peopleAdminFeedbackSectionEnter .22s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) .05s both;
+        }
+        .feedback-chain-shell[data-feedback-state="full"] .feedback-chain-actions{
+            animation:peopleAdminFeedbackSectionEnter .24s var(--feedback-motion-ease, cubic-bezier(.22,1,.36,1)) .11s both;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon{
+            animation:peopleAdminFeedbackSectionEnter .22s var(--feedback-motion-soft, cubic-bezier(.16,1,.3,1)) .03s both;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackSectionEntranceRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackSectionEntranceRender();
+    ensurePeopleAdminFeedbackSectionEntrance();
+};
+function ensurePeopleAdminFeedbackHoverLinkage(){
+    const styleId="people-admin-feedback-hover-linkage";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell .list-head h2,
+        .feedback-chain-shell .list-head h3,
+        .feedback-chain-shell .list-head .panel-intro,
+        .feedback-chain-shell .list-head .intro,
+        .feedback-chain-shell .feedback-chain-state .task-chip,
+        .feedback-chain-shell .feedback-chain-state .chip,
+        .feedback-chain-shell .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon .task-chip.current,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon .chip,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button.btn-chip{
+            transition:
+                transform var(--feedback-motion-fast,.18s) var(--feedback-motion-soft,cubic-bezier(.16,1,.3,1)),
+                box-shadow var(--feedback-motion-fast,.18s) var(--feedback-motion-soft,cubic-bezier(.16,1,.3,1)),
+                color var(--feedback-motion-fast,.18s) var(--feedback-motion-soft,cubic-bezier(.16,1,.3,1)),
+                border-color var(--feedback-motion-fast,.18s) var(--feedback-motion-soft,cubic-bezier(.16,1,.3,1)),
+                background-color var(--feedback-motion-fast,.18s) var(--feedback-motion-soft,cubic-bezier(.16,1,.3,1));
+        }
+        .feedback-chain-shell:hover .list-head h2,
+        .feedback-chain-shell:hover .list-head h3,
+        .feedback-chain-shell:focus-within .list-head h2,
+        .feedback-chain-shell:focus-within .list-head h3{
+            color:#8a4b08;
+            transform:translateY(-1px);
+        }
+        .feedback-chain-shell:hover .list-head .panel-intro,
+        .feedback-chain-shell:hover .list-head .intro,
+        .feedback-chain-shell:focus-within .list-head .panel-intro,
+        .feedback-chain-shell:focus-within .list-head .intro{
+            color:#695646;
+        }
+        .feedback-chain-shell:hover .feedback-chain-state .task-chip.current,
+        .feedback-chain-shell:hover .feedback-chain-state .task-chip.next,
+        .feedback-chain-shell:hover .feedback-chain-state .task-chip.pending,
+        .feedback-chain-shell:hover .feedback-chain-state .task-chip.done,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.current,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.next,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.pending,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.done,
+        .feedback-chain-shell:hover[data-feedback-state="restore"] .feedback-chain-ribbon .task-chip.current,
+        .feedback-chain-shell:focus-within[data-feedback-state="restore"] .feedback-chain-ribbon .task-chip.current{
+            transform:translateY(-1px);
+            box-shadow:0 8px 18px rgba(217,119,6,.10), inset 0 1px 0 rgba(255,255,255,.48);
+            border-color:rgba(217,119,6,.18);
+        }
+        .feedback-chain-shell:hover .feedback-chain-state .chip,
+        .feedback-chain-shell:focus-within .feedback-chain-state .chip,
+        .feedback-chain-shell:hover[data-feedback-state="restore"] .feedback-chain-ribbon .chip,
+        .feedback-chain-shell:focus-within[data-feedback-state="restore"] .feedback-chain-ribbon .chip{
+            transform:translateY(-1px);
+            box-shadow:0 6px 14px rgba(15,23,42,.06);
+            border-color:rgba(148,163,184,.20);
+        }
+        .feedback-chain-shell:hover .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell:focus-within .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell:hover[data-feedback-state="restore"] .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell:hover[data-feedback-state="restore"] .feedback-chain-ribbon > button.btn-chip,
+        .feedback-chain-shell:focus-within[data-feedback-state="restore"] .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell:focus-within[data-feedback-state="restore"] .feedback-chain-ribbon > button.btn-chip{
+            transform:translateY(-1px);
+            box-shadow:0 12px 24px rgba(217,119,6,.14);
+            border-color:rgba(217,119,6,.20);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackHoverLinkageRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackHoverLinkageRender();
+    ensurePeopleAdminFeedbackHoverLinkage();
+};
+function ensurePeopleAdminFeedbackHoverReleaseRhythm(){
+    const styleId="people-admin-feedback-hover-release-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head h2,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head h3{
+            color:#4a2c18;
+            transform:translateY(0);
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head .panel-intro,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head .intro{
+            color:#7b6858;
+            transform:translateY(0);
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .task-chip,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon .task-chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon .chip{
+            transform:translateY(0);
+            border-color:rgba(148,163,184,.14);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.42);
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon > button.btn-chip{
+            transform:translateY(0);
+            border-color:rgba(148,163,184,.18);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.48);
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head h2,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head h3,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head .panel-intro,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head .intro,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .task-chip,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .chip,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon .task-chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon .chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon > button.btn-chip{
+            transition-duration:.22s;
+            transition-timing-function:cubic-bezier(.22,.61,.36,1);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackHoverReleaseRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackHoverReleaseRender();
+    ensurePeopleAdminFeedbackHoverReleaseRhythm();
+};
+function ensurePeopleAdminFeedbackFocusVisibilityRhythm(){
+    const styleId="people-admin-feedback-focus-visibility-rhythm";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell:focus-within{
+            box-shadow:
+                0 0 0 3px rgba(217,119,6,.12),
+                0 18px 38px rgba(15,23,42,.10);
+        }
+        .feedback-chain-shell :is(button,.btn,a.btn):focus-visible{
+            outline:none;
+            border-color:rgba(217,119,6,.22);
+            box-shadow:
+                0 0 0 3px rgba(217,119,6,.14),
+                0 10px 22px rgba(217,119,6,.12);
+            transform:translateY(-1px);
+        }
+        .feedback-chain-shell .list-head > .btn.btn-chip:focus-visible,
+        .feedback-chain-shell .list-head > button.btn-chip:focus-visible,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > .btn.btn-chip:focus-visible,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon > button.btn-chip:focus-visible{
+            background:rgba(255,248,240,.96);
+            color:#8a4b08;
+        }
+        .feedback-chain-shell .feedback-chain-actions > .feedback-primary-action:focus-visible{
+            box-shadow:
+                0 0 0 3px rgba(217,119,6,.16),
+                0 14px 26px rgba(217,119,6,.18);
+        }
+        .feedback-chain-shell:focus-within .list-head h2,
+        .feedback-chain-shell:focus-within .list-head h3{
+            color:#8a4b08;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackFocusVisibilityRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackFocusVisibilityRender();
+    ensurePeopleAdminFeedbackFocusVisibilityRhythm();
+};
+function ensurePeopleAdminFeedbackFocusLinkage(){
+    const styleId="people-admin-feedback-focus-linkage";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell:focus-within .list-head .panel-intro,
+        .feedback-chain-shell:focus-within .list-head .intro{
+            color:#695646;
+        }
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.current,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.next,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.pending,
+        .feedback-chain-shell:focus-within .feedback-chain-state .task-chip.done,
+        .feedback-chain-shell[data-feedback-state="restore"]:focus-within .feedback-chain-ribbon .task-chip.current{
+            transform:translateY(-1px);
+            box-shadow:0 8px 18px rgba(217,119,6,.10), inset 0 1px 0 rgba(255,255,255,.48);
+            border-color:rgba(217,119,6,.20);
+        }
+        .feedback-chain-shell:focus-within .feedback-chain-state .chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:focus-within .feedback-chain-ribbon .chip{
+            transform:translateY(-1px);
+            box-shadow:0 6px 14px rgba(15,23,42,.06);
+            border-color:rgba(148,163,184,.22);
+        }
+        .feedback-chain-shell:focus-within .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell[data-feedback-state="restore"]:focus-within .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:focus-within .feedback-chain-ribbon > button.btn-chip{
+            transform:translateY(-1px);
+            box-shadow:0 12px 24px rgba(217,119,6,.15);
+            border-color:rgba(217,119,6,.22);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackFocusLinkageRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackFocusLinkageRender();
+    ensurePeopleAdminFeedbackFocusLinkage();
+};
+function ensurePeopleAdminFeedbackRestContrast(){
+    const styleId="people-admin-feedback-rest-contrast";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell:not(:hover):not(:focus-within){
+            border-color:rgba(148,163,184,.14);
+            box-shadow:0 8px 20px rgba(15,23,42,.05);
+            background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(251,249,245,.94));
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head h2,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head h3{
+            color:#4f3728;
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head .panel-intro,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .list-head .intro{
+            color:#7f7064;
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .task-chip.current,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .task-chip.next,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .task-chip.pending,
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .task-chip.done,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon .task-chip.current{
+            filter:saturate(.96);
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-state .chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon .chip{
+            background:rgba(255,255,255,.74);
+            color:#746459;
+        }
+        .feedback-chain-shell:not(:hover):not(:focus-within) .feedback-chain-actions > .feedback-primary-action,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon > .btn.btn-chip,
+        .feedback-chain-shell[data-feedback-state="restore"]:not(:hover):not(:focus-within) .feedback-chain-ribbon > button.btn-chip{
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.48);
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackRestContrastRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackRestContrastRender();
+    ensurePeopleAdminFeedbackRestContrast();
+};
+function ensurePeopleAdminFeedbackFinalCadence(){
+    const styleId="people-admin-feedback-final-cadence";
+    if(byId(styleId))return;
+    const style=document.createElement("style");
+    style.id=styleId;
+    style.textContent=`
+        .feedback-chain-shell{
+            --feedback-space-head:12px;
+            --feedback-space-source:10px;
+            --feedback-space-state:14px;
+            --feedback-space-actions:10px;
+        }
+        .feedback-chain-shell .panel-body{
+            display:grid;
+            align-content:start;
+        }
+        .feedback-chain-shell .list-head{
+            margin-bottom:var(--feedback-space-head);
+        }
+        .feedback-chain-shell .list-head > div:first-child{
+            gap:4px;
+        }
+        .feedback-chain-shell .feedback-source-chip{
+            display:inline-flex;
+            align-self:start;
+            margin-bottom:var(--feedback-space-source);
+        }
+        .feedback-chain-shell .feedback-chain-ribbon,
+        .feedback-chain-shell .feedback-chain-state{
+            margin-bottom:var(--feedback-space-state);
+        }
+        .feedback-chain-shell .feedback-chain-actions{
+            margin-top:0 !important;
+            padding-top:var(--feedback-space-actions);
+        }
+        .feedback-chain-shell .feedback-chain-ribbon + .feedback-chain-actions,
+        .feedback-chain-shell .feedback-chain-state + .feedback-chain-actions{
+            margin-top:0 !important;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"]{
+            --feedback-space-head:0px;
+            --feedback-space-source:0px;
+            --feedback-space-state:0px;
+            --feedback-space-actions:0px;
+        }
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-ribbon,
+        .feedback-chain-shell[data-feedback-state="restore"] .feedback-chain-actions{
+            margin-bottom:0;
+            padding-top:0;
+        }
+    `;
+    document.head.appendChild(style);
+}
+const __peopleAdminFeedbackFinalCadenceRender=renderPeopleAdminFeedbackTrail;
+renderPeopleAdminFeedbackTrail=function(){
+    __peopleAdminFeedbackFinalCadenceRender();
+    ensurePeopleAdminFeedbackFinalCadence();
+};
+
+function applyPeopleAdminTaskModulePattern(){
+    [
+        ["people-admin-summary",["task-module-shell","task-module-highlight"]],
+        ["people-admin-featured",["task-module-shell","task-module-soft"]],
+        ["people-admin-priority",["task-module-shell","task-module-highlight"]],
+        ["people-admin-branch-task",["task-module-shell","task-module-soft"]],
+        ["people-admin-task-batch",["task-module-shell","task-module-soft"]]
+    ].forEach(([id,classes])=>{
+        const node=byId(id);
+        if(!node)return;
+        node.classList.add(...classes);
+    });
+}
+
+const __peopleAdminTaskModuleSummaryRender=renderPeopleAdminSummary;
+renderPeopleAdminSummary=function(...args){
+    __peopleAdminTaskModuleSummaryRender(...args);
+    applyPeopleAdminTaskModulePattern();
+};
+
+const __peopleAdminTaskModuleFeaturedRender=renderPeopleAdminFeatured;
+renderPeopleAdminFeatured=function(...args){
+    __peopleAdminTaskModuleFeaturedRender(...args);
+    applyPeopleAdminTaskModulePattern();
+};
+
+const __peopleAdminTaskModulePriorityRender=renderPeopleAdminPriorityPanel;
+renderPeopleAdminPriorityPanel=function(...args){
+    __peopleAdminTaskModulePriorityRender(...args);
+    applyPeopleAdminTaskModulePattern();
+};
+
+const __peopleAdminTaskModuleBranchRender=renderBranchTaskPanel;
+renderBranchTaskPanel=function(...args){
+    __peopleAdminTaskModuleBranchRender(...args);
+    applyPeopleAdminTaskModulePattern();
+};
+
+const __peopleAdminTaskModuleBatchRender=renderTaskBatchPanel;
+renderTaskBatchPanel=function(...args){
+    __peopleAdminTaskModuleBatchRender(...args);
+    applyPeopleAdminTaskModulePattern();
+};
+
+function applyPeopleAdminSecondaryTaskModules(){
+    ["filter-tip","status-box","people-admin-focus-hint"].forEach(id=>{
+        const node=byId(id);
+        if(!node)return;
+        node.classList.add("task-module-shell","task-module-soft","task-module-compact","task-module-inline");
+    });
+    document.querySelectorAll('[data-batch-return-hint="true"]').forEach(node=>{
+        node.classList.add("task-module-shell","task-module-soft","task-module-compact","task-module-inline");
+    });
+    const peopleList=byId("people-list");
+    if(peopleList){
+        peopleList.classList.add("task-module-list");
+        peopleList.querySelectorAll(".card").forEach(node=>{
+            node.classList.add("task-module-item");
+            node.classList.toggle("task-module-item-active",node.classList.contains("flash-focus"));
+            node.dataset.taskModuleRole="people-card";
+            node.querySelector(".entry-head,.list-head")?.classList.add("task-module-head");
+        });
+    }
+    ["people-admin-featured","people-admin-priority","people-admin-branch-task","people-admin-task-batch"].forEach(id=>{
+        const host=byId(id);
+        if(!host)return;
+        host.querySelectorAll(".card,.entry,.stat").forEach(node=>{
+            node.classList.add("task-module-item");
+            node.classList.toggle("task-module-item-active",node.classList.contains("flash-focus"));
+            node.dataset.taskModuleRole=
+                id==="people-admin-featured"?"featured-card":
+                id==="people-admin-priority"?"priority-card":
+                id==="people-admin-branch-task"?"branch-task-card":
+                id==="people-admin-task-batch"?"batch-group-card":
+                "secondary-card";
+            node.querySelector(".entry-head,.list-head")?.classList.add("task-module-head");
+        });
+    });
+}
+
+const __peopleAdminSecondaryListRender=renderList;
+renderList=function(...args){
+    __peopleAdminSecondaryListRender(...args);
+    applyPeopleAdminSecondaryTaskModules();
+};
+
+const __peopleAdminSecondaryFeaturedRender=renderPeopleAdminFeatured;
+renderPeopleAdminFeatured=function(...args){
+    __peopleAdminSecondaryFeaturedRender(...args);
+    applyPeopleAdminSecondaryTaskModules();
+};
+
+const __peopleAdminSecondaryPriorityRender=renderPeopleAdminPriorityPanel;
+renderPeopleAdminPriorityPanel=function(...args){
+    __peopleAdminSecondaryPriorityRender(...args);
+    applyPeopleAdminSecondaryTaskModules();
+};
+
+const __peopleAdminSecondaryBranchRender=renderBranchTaskPanel;
+renderBranchTaskPanel=function(...args){
+    __peopleAdminSecondaryBranchRender(...args);
+    applyPeopleAdminSecondaryTaskModules();
+};
+
+const __peopleAdminSecondaryBatchRender=renderTaskBatchPanel;
+renderTaskBatchPanel=function(...args){
+    __peopleAdminSecondaryBatchRender(...args);
+    applyPeopleAdminSecondaryTaskModules();
+};
+</script>
+</body>
+</html>

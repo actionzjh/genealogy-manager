@@ -158,13 +158,13 @@ public class GedcomExporter {
         sb.append("0 ").append(xref).append(" FAM\n");
 
         // 丈夫
-        if (family.getHusbandId() != null) {
-            sb.append("1 HUSB @I").append(family.getHusbandId()).append("@\n");
+        if (family.getFatherId() != null) {
+            sb.append("1 HUSB @I").append(family.getFatherId()).append("@\n");
         }
 
         // 妻子
-        if (family.getWifeId() != null) {
-            sb.append("1 WIFE @I").append(family.getWifeId()).append("@\n");
+        if (family.getMotherId() != null) {
+            sb.append("1 WIFE @I").append(family.getMotherId()).append("@\n");
         }
 
         // 结婚日期

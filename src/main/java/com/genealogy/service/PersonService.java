@@ -88,8 +88,8 @@ public class PersonService {
     /**
      * 获取最大世代数
      */
-    public Integer getMaxGeneration() {
-        return personRepository.findMaxGeneration();
+    public Integer getMaxGeneration(Long genealogyId) {
+        return personRepository.findMaxGeneration(genealogyId);
     }
 
     /**
@@ -97,5 +97,12 @@ public class PersonService {
      */
     public long countByGender(String gender) {
         return personRepository.countByGender(gender);
+    }
+
+    /**
+     * 根据家谱ID和用户ID查找
+     */
+    public List<Person> findByGenealogyIdAndUserId(Long genealogyId, Long userId) {
+        return personRepository.findByGenealogyIdAndUserId(genealogyId, userId);
     }
 }

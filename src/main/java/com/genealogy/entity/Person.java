@@ -160,6 +160,11 @@ public class Person {
     private java.time.LocalDateTime updatedAt;
 
     /**
+     * 所属家谱ID
+     */
+    private Long genealogyId;
+
+    /**
      * 所属用户ID
      */
     private Long userId;

@@ -32,5 +32,5 @@ public interface PdfLayoutStrategy {
      * @param font 中文字体
      * @throws IOException 排版异常
      */
-    void layout(Document document, Genealogy genealogy, List<Person> allPersons, PdfFont font) throws IOException;
+    void layout(Document document, Genealogy genealogy, List<Person> allPersons, PdfFont font) throws Exception;
 }
