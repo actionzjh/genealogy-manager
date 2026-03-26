@@ -249,6 +249,10 @@
         }
 
         let svg = d3.select("svg");
+        // 确保SVG有明确尺寸，D3需要这些属性值
+        const container = document.getElementById('svg-container');
+        svg.attr("width", container.clientWidth).attr("height", container.clientHeight);
+
         let g = svg.append("g");
         let zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => {
             g.attr("transform", event.transform);
@@ -279,6 +283,11 @@
                 alert('请输入家谱ID');
                 return;
             }
+            if (!token) {
+                alert('请先登录');
+                location.href = 'login.html';
+                return;
+            }
 
             document.getElementById('loading').style.display = 'block';
             document.getElementById('loading').textContent = '加载中...';
@@ -287,9 +296,17 @@
             fetch(`/api/person/genealogy/${genealogyId}`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             })
-            .then(res => res.json())
+            .then(res => {
+                if (res.status === 401) {
+                    localStorage.clear();
+                    alert('登录已过期，请重新登录');
+                    location.href = 'login.html';
+                    throw new Error('Unauthorized');
+                }
+                return res.json();
+            })
             .then(data => {
-                if (data.code === 0) {
+                if (data.code === 0 && Array.isArray(data.data)) {
                     buildGraph(data.data);
                 } else {
                     alert('加载失败: ' + (data.message || '未知错误'));
@@ -297,8 +314,10 @@
                 document.getElementById('loading').style.display = 'none';
             })
             .catch(err => {
-                console.error(err);
-                alert('网络错误');
+                if (err.message !== 'Unauthorized') {
+                    console.error(err);
+                    alert('网络错误');
+                }
                 document.getElementById('loading').style.display = 'none';
             });
         }
@@ -357,15 +376,9 @@
 
             // 力导向模拟
             simulation = d3.forceSimulation(graph.nodes)
-                .force("link", d3.forceLink(graph.links).id(d => d.id).distance(d => {
-                    // 根据世代调整距离
-                    return 100;
-                }))
+                .force("link", d3.forceLink(graph.links).id(d => d.id).distance(100))
                 .force("charge", d3.forceManyBody().strength(-300))
-                .force("center", d3.forceCenter(
-                    svg.attr("width") / 2,
-                    svg.attr("height") / 2
-                ))
+                .force("center", d3.forceCenter(container.clientWidth / 2, container.clientHeight / 2))
                 .force("x", d3.forceX(d => (d.generation - 1) * 120).strength(0.1))
                 .force("y", d3.forceY(0).strength(0.05));
 
@@ -494,9 +507,14 @@
             return div.innerHTML;
         }
 
-        // 自动加载
+        // 自动加载（URL有genealogyId时）
         if (genealogyId) {
-            loadData();
+            if (!token) {
+                alert('请先登录');
+                location.href = 'login.html';
+            } else {
+                loadData();
+            }
         }
     </script>
 </body>
