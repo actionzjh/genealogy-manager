@@ -114,85 +114,6 @@
         .relation-name a:hover {
             text-decoration: underline;
         }
-        .timeline {
-            position: relative;
-            margin-top: 20px;
-            padding-left: 30px;
-        }
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #ddd;
-        }
-        .timeline-item {
-            position: relative;
-            margin-bottom: 15px;
-        }
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -26px;
-            top: 5px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #667eea;
-            border: 3px solid #fff;
-        }
-        .timeline-date {
-            font-size: 13px;
-            color: #666;
-        }
-        .timeline-type {
-            display: inline-block;
-            background: #f0f0ff;
-            color: #667eea;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        .timeline-desc {
-            color: #333;
-        }
-        .images-section {
-            margin-top: 20px;
-        }
-        .images-section h3 {
-            margin-bottom: 15px;
-        }
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-        }
-        .image-item img {
-            width: 100%;
-            border-radius: 6px;
-        }
-        .image-caption {
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .ancestors-path {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
-        }
-        .ancestors-path h3 {
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        .ancestor-chain {
-            color: #555;
-        }
         .loading {
             text-align: center;
             padding: 60px;
@@ -215,9 +136,15 @@
             text-decoration: none;
             border-radius: 6px;
             margin: 0 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
         }
         .back-btn {
             background: #95a5a6;
+        }
+        .btn:hover {
+            opacity: 0.9;
         }
         @media (max-width: 768px) {
             .info-grid {
@@ -238,9 +165,6 @@
             .relation-list {
                 grid-template-columns: 1fr;
             }
-            .images-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
     </style>
 </head>
@@ -249,7 +173,7 @@
         <div id="content" class="loading">加载中...</div>
         <div class="actions" id="actions" style="display: none;">
             <a href="javascript:history.back()" class="btn back-btn">← 返回</a>
-            <a href="interactive-tree.html?genealogyId=<span id="genealogyId"></span>" class="btn" target="_blank">🌳 查看世系图</a>
+            <a href="#" id="treeLink" class="btn" target="_blank">🌳 查看世系图</a>
             <button class="btn" onclick="generateAiBiography('baihua')">🤖 AI生成简介(白话文)</button>
             <button class="btn" onclick="generateAiBiography('wenyan')">🤖 AI生成简介(文言文)</button>
         </div>
@@ -259,8 +183,6 @@
         const token = localStorage.getItem('token');
         const personId = new URLSearchParams(window.location.search).get('id');
 
-        document.getElementById('personId').value = personId;
-
         async function loadPersonDetail() {
             if (!personId) {
                 document.getElementById('content').innerHTML = '<div class="error">缺少人物ID</div>';
@@ -269,18 +191,18 @@
 
             try {
                 const response = await fetch(`/api/person/${personId}`, {
-                    headers: { 'Authorization': 'Bearer ' + token
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await response.json();
 
                 if (data.code === 0) {
                     renderDetail(data.data);
                 } else {
-                    document.getElementById('content').innerHTML = `<div class="error">${data.message || '加载失败'}</div>';
+                    document.getElementById('content').innerHTML = '<div class="error">' + escapeHtml(data.message || '加载失败') + '</div>';
                 }
             } catch (error) {
                 console.error(error);
-                document.getElementById('content').innerHTML = `<div class="error">网络错误</div>`;
+                document.getElementById('content').innerHTML = '<div class="error">网络错误</div>';
             }
         }
 
@@ -289,155 +211,107 @@
                 <div class="card">
                     <div class="person-header">
                         <div>
-                            <div class="person-name">${escapeHtml(person.name)}</div>
+                            <div class="person-name">${escapeHtml(person.name || '未知姓名')}</div>
                             ${person.gender === 'M'
                                 ? '<div class="gender-m">男</div>'
                                 : person.gender === 'F'
                                     ? '<div class="gender-f">女</div>'
-                                    : '<div style="color:#999">性别未知</div>
-                            }
+                                    : '<div style="color:#999">性别未知</div>'}
                         </div>
-                        <div>
-                            第 ${person.generation || '-'} 世
-                        </div>
+                        <div>第 ${person.generation || '-'} 世</div>
                     </div>
-
                     <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">姓名</div>
-                            <div class="info-value">${escapeHtml(person.name)}</div>
-                        </div>
                         ${person.styleName ? `
                         <div class="info-item">
                             <div class="info-label">字</div>
                             <div class="info-value">${escapeHtml(person.styleName)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.hao ? `
                         <div class="info-item">
                             <div class="info-label">号</div>
                             <div class="info-value">${escapeHtml(person.hao)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.surname ? `
                         <div class="info-item">
                             <div class="info-label">姓氏</div>
                             <div class="info-value">${escapeHtml(person.surname)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.branch ? `
                         <div class="info-item">
                             <div class="info-label">支系</div>
                             <div class="info-value">${escapeHtml(person.branch)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.birthYear ? `
                         <div class="info-item">
                             <div class="info-label">出生</div>
-                            <div class="info-value">${escapeHtml(person.birthYear)}</div>
-                        </div>
-                        ` : ''}
+                            <div class="info-value">${escapeHtml(person.birthYear)}年</div>
+                        </div>` : ''}
                         ${person.deathYear ? `
                         <div class="info-item">
                             <div class="info-label">逝世</div>
-                            <div class="info-value">${escapeHtml(person.deathYear)}</div>
-                        </div>
-                        ` : ''}
+                            <div class="info-value">${escapeHtml(person.deathYear)}年</div>
+                        </div>` : ''}
                         ${person.title ? `
                         <div class="info-item">
                             <div class="info-label">封号/爵位</div>
                             <div class="info-value">${escapeHtml(person.title)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.occupation ? `
                         <div class="info-item">
                             <div class="info-label">官职/职业</div>
                             <div class="info-value">${escapeHtml(person.occupation)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.cemeteryLocation ? `
                         <div class="info-item">
                             <div class="info-label">墓地位置</div>
                             <div class="info-value">${escapeHtml(person.cemeteryLocation)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.maritalStatus ? `
                         <div class="info-item">
                             <div class="info-label">婚姻状况</div>
                             <div class="info-value">${escapeHtml(person.maritalStatus)}</div>
-                        </div>
-                        ` : ''}
-                        ${person.status ? `
-                        <div class="info-item">
-                            <div class="info-label">状态</div>
-                            <div class="info-value">${escapeHtml(person.status)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.migrationPath ? `
                         <div class="info-item">
                             <div class="info-label">迁徙路线</div>
                             <div class="info-value">${escapeHtml(person.migrationPath)}</div>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                         ${person.source ? `
                         <div class="info-item">
                             <div class="info-label">来源</div>
                             <div class="info-value">${escapeHtml(person.source)}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-            `;
+                        </div>` : ''}
+                    </div>`;
 
             // 亲属关系
-            html += `<div class="relation-section"><h3>亲属关系</h3><div class="relation-list">`;
-
-            if (person.fatherId) {
-                html += `
-                    <div class="relation-item">
-                        <div class="relation-type">父亲</div>
-                        <div class="relation-name"><a href="person-detail.html?id=${person.fatherId}">${person.fatherName || '#' + person.fatherId}</a></div>
-                    </div>
-                `;
+            if (person.fatherId || person.motherId) {
+                html += `<div class="relation-section"><h3>亲属关系</h3><div class="relation-list">`;
+                if (person.fatherId) {
+                    html += `<div class="relation-item"><div class="relation-type">父亲</div><div class="relation-name"><a href="person-detail.html?id=${person.fatherId}">${person.fatherName || '#' + person.fatherId}</a></div></div>`;
+                }
+                if (person.motherId) {
+                    html += `<div class="relation-item"><div class="relation-type">母亲</div><div class="relation-name"><a href="person-detail.html?id=${person.motherId}">${person.motherName || '#' + person.motherId}</a></div></div>`;
+                }
+                html += `</div></div>`;
             }
-            if (person.motherId) {
-                html += `
-                    <div class="relation-item">
-                        <div class="relation-type">母亲</div>
-                        <div class="relation-name"><a href="person-detail.html?id=${person.motherId}">${person.motherName || '#' + person.motherId}</a></div>
-                    </div>
-                `;
-            }
-            // 这里子女需要后端，简化处理
-
-            html += `</div></div>`;
 
             // 传记
             if (person.biography && person.biography.trim()) {
-                html += `
-                    <div class="biography">
-                        <h3>传记</h3>
-                        <p>${escapeHtml(person.biography)}</p>
-                    </div>
-                `;
+                html += `<div class="biography"><h3>传记</h3><p>${escapeHtml(person.biography)}</p></div>`;
             }
 
             // 成就
             if (person.achievements && person.achievements.trim()) {
-                html += `
-                    <div class="biography">
-                        <h3>主要功绩</h3>
-                        <p>${escapeHtml(person.achievements)}</p>
-                    </div>
-                `;
+                html += `<div class="biography"><h3>主要功绩</h3><p>${escapeHtml(person.achievements)}</p></div>`;
             }
 
             html += `</div>`;
-
             document.getElementById('content').innerHTML = html;
 
-            // 设置链接
+            // 设置操作链接
             if (person.genealogyId) {
-                document.getElementById('genealogyId').textContent = person.genealogyId;
+                const treeLink = document.getElementById('treeLink');
+                treeLink.href = `interactive-tree.html?genealogyId=${person.genealogyId}`;
                 document.getElementById('actions').style.display = 'block';
             }
         }
@@ -449,46 +323,18 @@
             return div.innerHTML;
         }
 
-        // 加载
-        loadPersonDetail();
-    </script>
-</body>
-</html>
-            html += `</div>`;
-
-            document.getElementById('content').innerHTML = html;
-
-            // 设置链接
-            if (person.genealogyId) {
-                document.getElementById('genealogyId').textContent = person.genealogyId;
-                document.getElementById('actions').style.display = 'block';
-            }
-        }
-
-        function escapeHtml(text) {
-            if (text == null) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // AI生成简介
         function generateAiBiography(style) {
             if (!personId) return;
-            if (!confirm(`确定使用AI为当前人物生成"${style === 'wenyan' ? '文言文' : '白话文'}简介吗？`)) {
-                return;
-            }
+            const label = style === 'wenyan' ? '文言文' : '白话文';
+            if (!confirm('确定使用AI为当前人物生成"' + label + '"简介吗？')) return;
 
-            fetch(`/api/ai-biography/generate`, {
+            fetch('/api/ai-biography/generate', {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    personId: parseInt(personId),
-                    style: style
-                })
+                body: JSON.stringify({ personId: parseInt(personId), style: style })
             })
             .then(res => res.json())
             .then(result => {
