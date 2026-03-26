@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "user_notification", indexes = {
-    @Index(name = "idx-userId-read", columnList = "userId,isRead")
+    @Index(name = "idx_userId_isRead", columnList = "userId,isRead")
 })
 public class UserNotification {
     

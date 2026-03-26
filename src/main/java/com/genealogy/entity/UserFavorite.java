@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "user_favorite", indexes = {
-    @Index(name = "idx-userId-type", columnList = "userId,type"),
-    @Index(name = "idx-userId-targetId", columnList = "userId,targetId")
+    @Index(name = "idx_userId_type", columnList = "userId,type"),
+    @Index(name = "idx_userId_targetId", columnList = "userId,targetId")
 })
 public class UserFavorite {
     
