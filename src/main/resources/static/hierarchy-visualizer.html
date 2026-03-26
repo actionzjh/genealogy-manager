@@ -1038,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load genealogy list from API
 function loadGenealogyList() {
-    fetch('/api/genealogy/list')
+    fetch('/api/genealogy-select/list')
         .then(res => res.json())
         .then(data => {
             const select = document.getElementById('genealogy-select');

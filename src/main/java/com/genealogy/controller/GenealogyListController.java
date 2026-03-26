@@ -16,7 +16,7 @@ import java.util.List;
  * 家谱列表API - 供可视化模块选择家谱
  */
 @RestController
-@RequestMapping("/api/genealogy")
+@RequestMapping("/api/genealogy-select")
 public class GenealogyListController {
 
     private final GenealogyRepository genealogyRepository;
