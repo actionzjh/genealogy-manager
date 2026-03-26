@@ -65,14 +65,14 @@ public class AiBiographyService {
         if (person.getTitle() != null && !person.getTitle().isEmpty()) {
             info.append("头衔/官职：").append(person.getTitle()).append("\n");
         }
-        if (person.getBirthPlace() != null && !person.getBirthPlace().isEmpty()) {
-            info.append("出生地：").append(person.getBirthPlace()).append("\n");
+        if (person.getMigrationPath() != null && !person.getMigrationPath().isEmpty()) {
+            info.append("迁徙地：").append(person.getMigrationPath()).append("\n");
         }
-        if (person.getBurialPlace() != null && !person.getBurialPlace().isEmpty()) {
-            info.append("葬地：").append(person.getBurialPlace()).append("\n");
+        if (person.getCemeteryLocation() != null && !person.getCemeteryLocation().isEmpty()) {
+            info.append("葬地：").append(person.getCemeteryLocation()).append("\n");
         }
-        if (person.getNote() != null && !person.getNote().isEmpty()) {
-            info.append("现有备注：").append(person.getNote()).append("\n");
+        if (person.getBiography() != null && !person.getBiography().isEmpty()) {
+            info.append("传记：").append(person.getBiography()).append("\n");
         }
 
         String styleDesc = style.equals("wenyan") ?

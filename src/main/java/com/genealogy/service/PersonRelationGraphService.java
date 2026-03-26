@@ -117,11 +117,14 @@ public class PersonRelationGraphService {
         }
 
         // 配偶
-        if (person.getSpouseId() != null) {
-            Optional<Person> spouse = personRepository.findById(person.getSpouseId());
-            if (spouse.isPresent()) {
-                addLink(person, spouse.get(), "配偶", visited, nodes, links);
-                collectRelations(spouse.get(), maxDepth, currentDepth + 1, visited, nodes, links);
+        if (person.getSpouseIds() != null && !person.getSpouseIds().isEmpty()) {
+            String firstSpouseId = person.getSpouseIds().split(",")[0].trim();
+            if (!firstSpouseId.isEmpty()) {
+                Optional<Person> spouse = personRepository.findById(Long.parseLong(firstSpouseId));
+                if (spouse.isPresent()) {
+                    addLink(person, spouse.get(), "配偶", visited, nodes, links);
+                    collectRelations(spouse.get(), maxDepth, currentDepth + 1, visited, nodes, links);
+                }
             }
         }
 

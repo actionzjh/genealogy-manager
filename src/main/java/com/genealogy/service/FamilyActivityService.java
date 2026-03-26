@@ -5,6 +5,8 @@ import com.genealogy.entity.Genealogy;
 import com.genealogy.repository.FamilyActivityRepository;
 import com.genealogy.repository.GenealogyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -126,7 +128,7 @@ public class FamilyActivityService {
     }
 
     // 返回结果封装
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;

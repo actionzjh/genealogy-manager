@@ -75,7 +75,7 @@ public class UserNotificationService {
      */
     @Transactional
     public void markAllAsRead(Long userId) {
-        List<UserNotification> unread = notificationRepository.findByUserIdAndIsReadFalse(userId);
+        List<UserNotification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
         unread.forEach(notification -> {
             notification.setIsRead(true);
             notificationRepository.save(notification);

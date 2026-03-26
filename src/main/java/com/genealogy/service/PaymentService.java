@@ -11,6 +11,8 @@ import com.genealogy.entity.User;
 import com.genealogy.repository.PaymentOrderRepository;
 import com.genealogy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,15 +38,15 @@ public class PaymentService {
     /**
      * 会员定价配置
      */
-    @lombok.Data
-    @lombok.AllArgsConstructor
+    @Data
+    @AllArgsConstructor
     public static class MembershipPlan {
         private int level;
         private String name;
         private BigDecimal price;
         private int months;
         private int maxGenealogy;
-        private int maxPeoplePerGenealogy;
+        private int maxPersonsPerGenealogy;
         private int maxCollaborators;
     }
 
@@ -191,7 +193,7 @@ public class PaymentService {
         }
 
         // 更新会员信息
-        user.setMembershipLevel(order.getMembershipLevel());
+        user.setMembershipLevel(String.valueOf(order.getMembershipLevel()));
         user.setMembershipExpireAt(expireTime);
 
         // 更新额度限制（根据套餐）
@@ -200,8 +202,8 @@ public class PaymentService {
                 .findFirst()
                 .orElse(null);
         if (plan != null) {
-            user.setMaxGenealogy(plan.getMaxGenealogy());
-            user.setMaxPeoplePerGenealogy(plan.getMaxPeoplePerGenealogy());
+            user.setMaxGenealogies(plan.getMaxGenealogy());
+            user.setMaxPersonsPerGenealogy(plan.getMaxPersonsPerGenealogy());
             user.setMaxCollaborators(plan.getMaxCollaborators());
         }
 

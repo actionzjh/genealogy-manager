@@ -6,6 +6,8 @@ import com.genealogy.repository.GenealogyRepository;
 import com.genealogy.repository.RootSearchRepository;
 import com.genealogy.service.RootSearchNotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,13 +28,17 @@ public class RootSearchService {
 
     private final RootSearchRepository rootSearchRepository;
     private final GenealogyRepository genealogyRepository;
+
+    public Optional<RootSearch> findById(Long id) {
+        return rootSearchRepository.findById(id);
+    }
     private final RootSearchNotificationService notificationService;
 
     /**
      * 匹配结果DTO
      */
-    @lombok.Data
-    @lombok.AllArgsConstructor
+    @Data
+    @AllArgsConstructor
     public static class MatchResult {
         private RootSearch search;
         private double score;
@@ -159,7 +165,7 @@ public class RootSearchService {
                         notificationService.createNotification(
                                 search.getUserId(),
                                 search.getId(),
-                                resultSearch.getGenealogyId() != null ? resultSearch.getGenealogyId() : mr.getSearch().getId(),
+                                null,
                                 mr.getScore()
                         );
                         // 同时给对方也发通知，说你匹配到了他
@@ -300,7 +306,7 @@ public class RootSearchService {
     }
 
     // 返回结果封装
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;

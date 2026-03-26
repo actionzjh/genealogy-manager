@@ -1,8 +1,11 @@
 package com.genealogy.service;
 
 import com.genealogy.entity.User;
+import com.genealogy.repository.GenealogyRepository;
 import com.genealogy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +21,7 @@ import java.util.Optional;
 public class MembershipService {
 
     private final UserRepository userRepository;
+    private final GenealogyRepository genealogyRepository;
 
     /**
      * 会员等级配置
@@ -52,7 +56,7 @@ public class MembershipService {
 
         // 获取额度
         int max = getUserMaxGenealogies(user);
-        long current = userRepository.countByUserId(userId);
+        long current = genealogyRepository.countByUserId(userId);
 
         if (current >= max) {
             String level = getMembershipLevel(user);
@@ -194,8 +198,8 @@ public class MembershipService {
     /**
      * 检查结果
      */
-    @lombok.Data
-    @lombok.AllArgsConstructor
+    @Data
+    @AllArgsConstructor
     public static class CheckResult {
         private boolean allowed;
         private String message;

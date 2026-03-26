@@ -7,6 +7,8 @@ import com.qiniu.storage.Region;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.util.Auth;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,7 +29,7 @@ public class CloudStorageService {
     /**
      * 上传结果
      */
-    @lombok.Data
+    @Data
     public static class UploadResult {
         private boolean success;
         private String message;
@@ -58,7 +60,7 @@ public class CloudStorageService {
             Auth auth = Auth.create(config.getAccessKey(), config.getSecretKey());
             String upToken = auth.uploadToken(config.getBucket());
 
-            Response response = uploadManager.put(file.getInputStream(), fileKey, upToken);
+            Response response = uploadManager.put(file.getBytes(), fileKey, upToken);
             if (response.isOK()) {
                 String fullUrl = config.getDomain().endsWith("/")
                         ? config.getDomain() + fileKey

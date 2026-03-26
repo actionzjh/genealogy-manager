@@ -2,6 +2,7 @@ package com.genealogy.service;
 
 import com.genealogy.entity.FamilyMigration;
 import com.genealogy.repository.FamilyMigrationRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -82,7 +83,7 @@ public class FamilyMigrationService {
         return migrationRepository.findByGenealogyIdAndIsPublicTrueOrderBySortOrderAsc(genealogyId);
     }
 
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;

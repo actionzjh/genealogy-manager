@@ -3,6 +3,8 @@ package com.genealogy.service;
 import com.genealogy.entity.FamilyMessage;
 import com.genealogy.repository.FamilyMessageRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -96,7 +98,7 @@ public class FamilyMessageService {
         return Result.success(null);
     }
 
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;

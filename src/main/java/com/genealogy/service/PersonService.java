@@ -105,4 +105,11 @@ public class PersonService {
     public List<Person> findByGenealogyIdAndUserId(Long genealogyId, Long userId) {
         return personRepository.findByGenealogyIdAndUserId(genealogyId, userId);
     }
+
+    /**
+     * 统计家谱人数
+     */
+    public long countByGenealogyId(Long genealogyId) {
+        return personRepository.countByGenealogyId(genealogyId);
+    }
 }

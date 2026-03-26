@@ -16,6 +16,8 @@ import com.genealogy.service.pdf.PagodaLayoutStrategy;
 import com.genealogy.service.pdf.PdfLayoutStrategy;
 import com.genealogy.service.pdf.TableListLayoutStrategy;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -131,8 +133,8 @@ public class PdfExportService {
     /**
      * 排版信息DTO
      */
-    @lombok.Data
-    @lombok.AllArgsConstructor
+    @Data
+    @AllArgsConstructor
     public static class LayoutInfo {
         private String name;
         private String description;

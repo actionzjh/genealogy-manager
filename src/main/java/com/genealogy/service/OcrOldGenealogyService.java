@@ -3,6 +3,8 @@ package com.genealogy.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -40,7 +42,7 @@ public class OcrOldGenealogyService {
     /**
      * OCR识别结果
      */
-    @lombok.Data
+    @Data
     public static class OcrResult {
         private boolean success;
         private String message;
@@ -62,7 +64,7 @@ public class OcrOldGenealogyService {
         }
     }
 
-    @lombok.Data
+    @Data
     public static class OcrWord {
         private String words;
         private double probability;

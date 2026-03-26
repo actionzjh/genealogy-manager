@@ -9,6 +9,8 @@ import com.genealogy.repository.GenealogyRepository;
 import com.genealogy.repository.PersonRepository;
 import com.genealogy.util.ExcelImportListener;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,7 +33,7 @@ public class ExcelImportService {
     /**
      * 导入结果
      */
-    @lombok.Data
+    @Data
     public static class ImportResult {
         private int genealogyCount;
         private int personCount;

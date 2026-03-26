@@ -3,6 +3,8 @@ package com.genealogy.service;
 import com.genealogy.entity.FamilyPhoto;
 import com.genealogy.repository.FamilyPhotoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -94,7 +96,7 @@ public class FamilyPhotoService {
         return photoRepository.findById(id).orElse(null);
     }
 
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;

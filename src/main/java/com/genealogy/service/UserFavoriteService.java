@@ -3,6 +3,7 @@ package com.genealogy.service;
 import com.genealogy.entity.UserFavorite;
 import com.genealogy.repository.UserFavoriteRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,7 +63,7 @@ public class UserFavoriteService {
         return favoriteRepository.findByUserIdAndTargetId(userId, targetId).isPresent();
     }
 
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;

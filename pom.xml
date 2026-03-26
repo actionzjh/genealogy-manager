@@ -19,6 +19,7 @@
 
     <properties>
         <java.version>17</java.version>
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencies>
@@ -148,12 +149,17 @@
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
-        <!-- 微信支付SDK v3 -->
+        <!-- 微信支付SDK v3 (暂时禁用，待API兼容后启用)
+        <dependency>
+            <groupId>com.github.wechatpay-apiv3</groupId>
+            <artifactId>wechatpay-java</artifactId>
+            <version>0.2.8</version>
+        </dependency>
         <dependency>
             <groupId>com.github.wechatpay-apiv3</groupId>
             <artifactId>wechatpay-apache-httpclient</artifactId>
-            <version>0.4.12</version>
-        </dependency>
+            <version>0.4.6</version>
+        </dependency> -->
     </dependencies>
 
     <build>

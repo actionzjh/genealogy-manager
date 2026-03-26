@@ -133,7 +133,7 @@ public class GenealogyController {
      * 获取当前用户的所有家谱
      */
     @GetMapping
-    public ResponseEntity<List<Genealogy>> getMyGenealogies(Authentication authentication) {
+    public ResponseEntity<List<Genealogy>> getAllGenealogies(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             return ResponseEntity.status(401).build();
         }

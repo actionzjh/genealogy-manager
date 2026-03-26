@@ -7,6 +7,8 @@ import com.genealogy.repository.GenealogyCollaboratorRepository;
 import com.genealogy.repository.GenealogyRepository;
 import com.genealogy.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,9 +67,9 @@ public class GenealogyCollaboratorService {
         User invitee = inviteeOpt.get();
 
         // 检查是否已经是协作者
-        Optional<GenealogyCollaborator> existing = collaboratorRepository
+        Optional<GenealogyCollaborator> alreadyCollaborator = collaboratorRepository
                 .findByGenealogyIdAndUserId(genealogyId, invitee.getId());
-        if (existing.isPresent()) {
+        if (alreadyCollaborator.isPresent()) {
             return Result.error("该用户已经是协作者，请修改权限直接更新即可");
         }
 
@@ -158,7 +160,7 @@ public class GenealogyCollaboratorService {
                 info.setId(c.getId());
                 info.setUserId(user.getId());
                 info.setUsername(user.getUsername());
-                info.setNickname(user.getNickname());
+                info.setNickname(user.getDisplayName());
                 info.setRole(c.getRole());
                 info.setInviterId(c.getInviterId());
                 info.setCreatedAt(c.getCreatedAt());
@@ -213,7 +215,7 @@ public class GenealogyCollaboratorService {
     }
 
     // 返回结果封装
-    @lombok.Data
+    @Data
     public static class Result {
         private boolean success;
         private String message;
@@ -236,7 +238,7 @@ public class GenealogyCollaboratorService {
     }
 
     // 协作者信息（带用户名）
-    @lombok.Data
+    @Data
     public static class CollaboratorInfo {
         private Long id;
         private Long userId;
