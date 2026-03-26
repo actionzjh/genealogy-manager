@@ -16,9 +16,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,13 +42,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> {
-            // 实际实现由CustomUserDetailsService完成
-            throw new UsernameNotFoundException("User not found: " + username);
-        };
-    }
+    // UserDetailsService 由 CustomUserDetailsService(@Service) 提供，无需在此定义
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
