@@ -82,6 +82,7 @@ public class FamilyCelebrityService {
     /**
      * 获取家谱公开名人列表
      */
+    @org.springframework.cache.annotation.Cacheable(value = "familyCelebrity", key = "#genealogyId")
     public List<FamilyCelebrity> listPublic(Long genealogyId) {
         return celebrityRepository.findByGenealogyIdAndIsPublicTrueOrderBySortOrderDescGenerationAsc(genealogyId);
     }

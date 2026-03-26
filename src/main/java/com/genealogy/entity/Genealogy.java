@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity
-@Table(name = "genealogy")
+@Table(name = "genealogy", indexes = {
+    @Index(name = "idx_userId", columnList = "userId")
+})
 public class Genealogy {
     
     @Id

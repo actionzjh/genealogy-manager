@@ -33,6 +33,7 @@ public class GenerationWordService {
     /**
      * 查询某姓氏所有字辈
      */
+    @org.springframework.cache.annotation.Cacheable(value = "generationWord", key = "#surname.toLowerCase()")
     public List<GenerationWord> listBySurname(String surname) {
         return generationWordRepository.findBySurnameIgnoreCaseAndIsPublicTrue(surname);
     }

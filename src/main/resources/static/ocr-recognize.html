@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老谱OCR识别 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 24px;
+        }
+        .header p {
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        .form-group textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group select {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-success {
+            background: #67c23a;
+            color: white;
+        }
+        .result-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .result-message.success {
+            background: #f0f9eb;
+            border: 1px solid #e1f3d8;
+            color: #67c23a;
+            display: block;
+        }
+        .result-message.error {
+            background: #fef0f0;
+            border: 1px solid #fde2e2;
+            color: #f56c6c;
+            display: block;
+        }
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            display: none;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .extracted-people {
+            margin-top: 30px;
+        }
+        .person-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+        .person-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .person-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .person-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .info-item {
+            font-size: 14px;
+        }
+        .info-item label {
+            color: #666;
+            font-weight: 500;
+        }
+        .info-item value {
+            color: #333;
+            margin-left: 6px;
+        }
+        .actions {
+            margin-top: 12px;
+            text-align: right;
+        }
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 14px;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .history-list {
+            display: grid;
+            gap: 10px;
+        }
+        .history-item {
+            border: 1px solid #eee;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .history-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-processing {
+            background: #e6f2ff;
+            color: #409eff;
+        }
+        .status-done {
+            background: #f0f9eb;
+            color: #67c23a;
+        }
+        .status-failed {
+            background: #fef0f0;
+            color: #f56c6c;
+        }
+        .result-json {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        /* 移动端 */
+        @media (max-width: 600px) {
+            .person-info {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                margin: 15px auto;
+                padding: 0 10px;
+            }
+            .card {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🤖 AI OCR 老谱结构化识别</h1>
+            <p>粘贴OCR识别出的原始文本，AI自动提取结构化人物信息，支持一键导入家谱</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="result-message" id="resultMessage"></div>
+
+        <div class="card">
+            <h2>第一步：选择家谱</h2>
+            <div class="form-group">
+                <label>选择目标家谱</label>
+                <select id="genealogyId">
+                    <option value="">-- 请选择 --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>第二步：粘贴OCR原始文本</h2>
+            <div class="form-group">
+                <label>将图片OCR识别出的原始文字粘贴到这里</label>
+                <textarea id="originalText" placeholder="示例：&#10;第十八世&#10;讳国梁，字显臣，号干寰，配王氏，生康熙丙子年正月十五寅时生，乾隆庚戌年八月申时终，葬某处。子三：长曰步云，次曰青云，三曰登云。女一，适某处陈某。&#10;国璋，字俊臣，号理斋..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="startExtract()">开始AI结构化提取</button>
+        </div>
+
+        <div class="loading" id="loadingBox">
+            <div class="spinner"></div>
+            <div>AI 正在提取结构化数据，请稍候...</div>
+        </div>
+
+        <div class="card extracted-people" id="resultCard" style="display:none;">
+            <h2>✅ 提取完成 - 识别出的人物</h2>
+            <div id="people-list">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📜 历史识别记录</h2>
+            <div class="history-list" id="history-list">
+                <div class="empty">暂无记录</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+<script>
+    const token = localStorage.getItem('token');
+    let currentGenealogyId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMyGenealogies();
+    });
+
+    function loadMyGenealogies() {
+        fetch('/api/genealogy/my', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 0) {
+            const select = document.getElementById('genealogyId');
+            data.data.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = g.name;
+                select.appendChild(opt);
+            });
+            // 监听选择
+            select.addEventListener('change', () => {
+                currentGenealogyId = parseInt(select.value);
+                loadHistory();
+            });
+        }
+        });
+    }
+
+    function showMessage(id, text, isSuccess) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = 'result-message ' + (isSuccess ? 'success' : 'error');
+        setTimeout(() => {
+            el.className = 'result-message';
+        }, 5000);
+    }
+
+    function startExtract() {
+        const genealogyId = parseInt(document.getElementById('genealogyId').value);
+        const originalText = document.getElementById('originalText').value.trim();
+
+        if (!genealogyId) {
+            showMessage('resultMessage', '请先选择家谱', false);
+            return;
+        }
+        if (!originalText || originalText.length < 10) {
+            showMessage('resultMessage', '请输入至少10个字符的OCR文本', false);
+            return;
+        }
+
+        document.getElementById('loadingBox').style.display = 'block';
+        document.getElementById('resultCard').style.display = 'none';
+
+        fetch('/api/ai-ocr/extract', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                genealogyId: genealogyId,
+                originalText: originalText
+            })
+        })
+        .then(res => res.json())
+        .then(result => {
+            document.getElementById('loadingBox').style.display = 'none';
+            if (result.success) {
+                showMessage('resultMessage', '提取成功，共识别出 ' + result.data.people.length + ' 个人物', true);
+                renderPeople(result.data.people);
+                document.getElementById('resultCard').style.display = 'block';
+                loadHistory();
+            } else {
+                showMessage('resultMessage', result.message, false);
+            }
+        })
+        .catch(err => {
+            document.getElementById('loadingBox').style.display = 'none';
+            showMessage('resultMessage', '网络错误：' + err.message, false);
+        });
+    }
+
+    function renderPeople(people) {
+        const container = document.getElementById('people-list');
+        if (!people || people.length === 0) {
+            container.innerHTML = '<div class="empty">未识别出人物，请检查输入文本</div>';
+            return;
+        }
+        let html = '';
+        people.forEach((p, index) => {
+            html += `
+                <div class="person-card">
+                    <div class="person-header">
+                        <span class="person-name">${p.name || '(无名}</span>
+                        <button class="btn btn-success btn-sm" onclick="importSinglePerson(${index})">导入此人物</button>
+                    </div>
+                    <div class="person-info">
+                        <div class="info-item"><label>字:</label> <value>${p.styleName || '-'}</value></div>
+                        <div class="info-item"><label>号:</label> <value>${p.hao || '-'}</value></div>
+                        <div class="info-item"><label>世代:</label> <value>${p.generation != null ? p.generation : '-'}</value></div>
+                        <div class="info-item"><label>性别:</label> <value>${p.gender === 'male' ? '男' : p.gender === 'female' ? '女' : '-'}</value></div>
+                        <div class="info-item"><label>出生年份:</label> <value>${p.birthYear || '-'}</value></div>
+                        <div class="info-item"><label>逝世年份:</label> <value>${p.deathYear || '-'}</value></div>
+                        <div class="info-item"><label>父亲姓名:</label> <value>${p.fatherName || '-'}</value></div>
+                        <div class="info-item"><label>母亲姓名:</label> <value>${p.motherName || '-'}</value></div>
+                        <div class="info-item"><label>配偶姓名:</label> <value>${p.spouseName || '-'}</value></div>
+                        <div class="info-item"><label>子女数量:</label> <value>${p.childrenNames ? p.childrenNames.length : 0}</value></div>
+                        <div class="info-item"><label>出生地:</label> <value>${p.birthPlace || '-'}</value></div>
+                        <div class="info-item"><label>葬地:</label> <value>${p.burialPlace || '-'}</value></div>
+                        <div class="info-item full-width" style="grid-column: 1/-1;"><label>头衔/官职:</label> <value>${p.title || '-'}</value></div>
+                        ${p.biography ? `<div class="info-item full-width" style="grid-column: 1/-1;"><label>生平:</label> <value>${p.biography}</value></div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // 保存原始数据到window方便导入
+        window.extractedPeople = people;
+    }
+
+    function importSinglePerson(index) {
+        const person = window.extractedPeople[index];
+        // TODO: 跳转到person-entry页面，预填充数据
+        const params = new URLSearchParams();
+        params.set('genealogyId', currentGenealogyId);
+        for (let k in person) {
+            if (person[k] !== null && person[k] !== '') {
+                params.set(k, person[k]);
+            }
+        }
+        window.open('/person-entry.html?' + params.toString(), '_blank');
+    }
+
+    function loadHistory() {
+        if (!currentGenealogyId) return;
+        fetch(`/api/ai-ocr/list/${currentGenealogyId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                renderHistory(result.data);
+            }
+        });
+    }
+
+    function renderHistory(list) {
+        const container = document.getElementById('history-list');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">暂无历史记录</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(item => {
+            const statusClass = {
+                'processing': 'status-processing',
+                'done': 'status-done',
+                'failed': 'status-failed'
+            }[item.status] || 'status-processing';
+            const statusText = {
+                'processing': '处理中',
+                'done': '已完成',
+                'failed': '失败'
+            }[item.status] || '处理中';
+            const shortText = item.originalText.length > 50 ? item.originalText.substring(0, 50) + '...' : item.originalText;
+            html += `
+                <div class="history-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>ID: ${item.id} <span class="history-status ${statusClass}">${statusText}</span></span>
+                        <button class="btn-sm btn" onclick="deleteHistory(${item.id})">删除</button>
+                    </div>
+                    <div style="margin-top:8px; color:#666; font-size:13px">${shortText}</div>
+                    ${item.status === 'done' ? `<button class="btn-sm btn" style="margin-top:8px" onclick="viewResult(${item.id})">查看结果</button>` : ''}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function deleteHistory(id) {
+        if (!confirm('确定删除这条记录？')) return;
+        fetch(`/api/ai-ocr/delete/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                showMessage('resultMessage', result.message, true);
+                loadHistory();
+            } else {
+                showMessage('resultMessage', result.message, false);
+            }
+        });
+    }
+
+    function viewResult(id) {
+        fetch(`/api/ai-ocr/task/${id}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                try {
+                    const data = JSON.parse(result.data.structuredJson);
+                    if (data.people) {
+                        renderPeople(data.people);
+                        document.getElementById('resultCard').style.display = 'block';
+                    } else {
+                        showMessage('resultMessage', '结构化数据格式错误', false);
+                    }
+                } catch(e) {
+                    showMessage('resultMessage', 'JSON解析失败：' + e.message, false);
+                }
+            } else {
+                showMessage('resultMessage', result.message, false);
+            }
+        });
+    }
+</script>
+</body>
+</html>

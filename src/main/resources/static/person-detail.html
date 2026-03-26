@@ -250,6 +250,8 @@
         <div class="actions" id="actions" style="display: none;">
             <a href="javascript:history.back()" class="btn back-btn">← 返回</a>
             <a href="interactive-tree.html?genealogyId=<span id="genealogyId"></span>" class="btn" target="_blank">🌳 查看世系图</a>
+            <button class="btn" onclick="generateAiBiography('baihua')">🤖 AI生成简介(白话文)</button>
+            <button class="btn" onclick="generateAiBiography('wenyan')">🤖 AI生成简介(文言文)</button>
         </div>
     </div>
 
@@ -445,6 +447,60 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // 加载
+        loadPersonDetail();
+    </script>
+</body>
+</html>
+            html += `</div>`;
+
+            document.getElementById('content').innerHTML = html;
+
+            // 设置链接
+            if (person.genealogyId) {
+                document.getElementById('genealogyId').textContent = person.genealogyId;
+                document.getElementById('actions').style.display = 'block';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (text == null) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // AI生成简介
+        function generateAiBiography(style) {
+            if (!personId) return;
+            if (!confirm(`确定使用AI为当前人物生成"${style === 'wenyan' ? '文言文' : '白话文'}简介吗？`)) {
+                return;
+            }
+
+            fetch(`/api/ai-biography/generate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    personId: parseInt(personId),
+                    style: style
+                })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    alert('生成成功，请复制使用：\n\n' + result.data);
+                } else {
+                    alert('生成失败：' + result.message);
+                }
+            })
+            .catch(err => {
+                alert('网络错误：' + err.message);
+            });
         }
 
         // 加载

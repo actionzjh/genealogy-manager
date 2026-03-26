@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>活动管理 - 家族宣传</title>
+    <title>家族宣传管理 - 家谱管理系统</title>
     <style>
         * {
             box-sizing: border-box;
@@ -18,7 +18,7 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 30px 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .header-content {
@@ -31,11 +31,6 @@
         .header p {
             margin-top: 8px;
             opacity: 0.9;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
         }
         .tabs {
             display: flex;
@@ -56,11 +51,8 @@
             background: white;
             color: #667eea;
         }
-        .tab:hover {
+        .tab:hover:not(.active) {
             background: #e8e8e8;
-        }
-        .tab.active:hover {
-            background: white;
         }
         .tab-content {
             display: none;
@@ -68,17 +60,22 @@
         .tab-content.active {
             display: block;
         }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
         .card {
             background: white;
             border-radius: 0 0 8px 8px;
-            padding: 24px;
+            padding: 28px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             margin-bottom: 20px;
         }
         .card h2 {
             color: #333;
             margin-bottom: 20px;
-            font-size: 18px;
+            font-size: 20px;
         }
         .form-grid {
             display: grid;
@@ -135,6 +132,9 @@
             background: #f56c6c;
             color: white;
         }
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
         .result-message {
             padding: 12px 16px;
             border-radius: 6px;
@@ -162,33 +162,6 @@
             border-radius: 8px;
             padding: 16px;
         }
-        .photo-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-        }
-        .photo-item {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .photo-item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            display: block;
-        }
-        .photo-info {
-            padding: 10px;
-        }
-        .photo-title {
-            font-weight: 500;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-        .photo-actions {
-            text-align: right;
-        }
         .activity-item-header {
             display: flex;
             justify-content: space-between;
@@ -205,6 +178,7 @@
             padding: 3px 10px;
             border-radius: 999px;
             font-size: 12px;
+            font-weight: 500;
         }
         .badge-planned {
             background: #e6f2ff;
@@ -231,21 +205,33 @@
             padding: 40px;
             color: #999;
         }
-        .select-genealogy {
-            margin-bottom: 20px;
+        .photo-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
         }
-        .select-genealogy label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #333;
+        .photo-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .select-genealogy select {
+        .photo-item img {
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+        .photo-info {
+            padding: 10px;
+        }
+        .photo-title {
+            font-weight: 500;
             font-size: 14px;
+            color: #2f2419;
+        }
+        .photo-actions {
+            margin-top: 8px;
+            text-align: right;
         }
 
         /* 移动端适配 */
@@ -255,13 +241,10 @@
                 padding: 0 10px;
             }
             .card {
-                padding: 16px;
+                padding: 18px;
             }
             .form-grid {
                 grid-template-columns: 1fr;
-            }
-            .header h1 {
-                font-size: 20px;
             }
             .tabs {
                 flex-wrap: wrap;
@@ -280,7 +263,7 @@
     <div class="header">
         <div class="header-content">
             <h1>📣 家族宣传管理</h1>
-            <p>管理宗亲活动、家族相册，对外宣传吸引更多宗亲参与</p>
+            <p>管理宗亲活动、家族相册、名人介绍、迁徙地图，对外宣传吸引更多宗亲</p>
         </div>
     </div>
 
@@ -289,6 +272,7 @@
             <div class="tab active" onclick="switchTab('activity')">📅 活动管理</div>
             <div class="tab" onclick="switchTab('photo')">📷 家族相册</div>
             <div class="tab" onclick="switchTab('celebrity')">👤 家族名人</div>
+            <div class="tab" onclick="switchTab('migration')">🗺️ 迁徙地图</div>
         </div>
 
         <!-- 活动管理 Tab -->
@@ -296,7 +280,7 @@
             <div class="card">
                 <div id="resultMessage" class="result-message"></div>
 
-                <h2>➕ 新建活动</h2>
+                <h2>➕ 新建宗亲活动</h2>
                 <div class="select-genealogy">
                     <label>选择家谱 *</label>
                     <select id="genealogyId">
@@ -387,16 +371,16 @@
                         <label>图片URL *</label>
                         <input type="text" id="photoUrl" placeholder="上传图片后填写访问URL">
                     </div>
-                    <div class="form-group full-width">
-                        <label>照片描述</label>
-                        <textarea id="photoDescription" rows="2" placeholder="简单介绍一下这张照片"></textarea>
-                    </div>
                     <div class="form-group">
                         <label>是否公开</label>
                         <select id="photoIsPublic">
                             <option value="true">公开（对外展示）</option>
                             <option value="false">不公开</option>
                         </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>照片描述</label>
+                        <textarea id="photoDescription" rows="2" placeholder="简单介绍一下这张照片"></textarea>
                     </div>
                 </div>
                 <div class="actions">
@@ -490,6 +474,86 @@
             </div>
         </div>
 
+        <!-- 迁徙地图 Tab -->
+        <div id="tab-migration" class="tab-content">
+            <div class="card">
+                <div id="migrationResultMessage" class="result-message"></div>
+
+                <h2>🗺️ 添加家族迁徙</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>所属家谱 *</label>
+                        <select id="migrationGenealogyId">
+                            <option value="">-- 请选择家谱 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>迁徙名称 *</label>
+                        <input type="text" id="migrationName" placeholder="例如：从江西迁移到四川">
+                    </div>
+                    <div class="form-group">
+                        <label>迁徙年份</label>
+                        <input type="text" id="migrationYear" placeholder="例如：清乾隆年间">
+                    </div>
+                    <div class="form-group">
+                        <label>排序</label>
+                        <input type="number" id="migrationSortOrder" value="0" placeholder="越大越靠后">
+                    </div>
+                    <div class="form-group">
+                        <label>是否公开</label>
+                        <select id="migrationIsPublic">
+                            <option value="true">公开</option>
+                            <option value="false">不公开</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>出发地 - 名称</label>
+                        <input type="text" id="migrationFromPlace" placeholder="江西省 吉安府">
+                    </div>
+                    <div class="form-group">
+                        <label>目的地 - 名称</label>
+                        <input type="text" id="migrationToPlace" placeholder="四川省 重庆府">
+                    </div>
+                    <div class="form-group">
+                        <label>出发地 - 纬度</label>
+                        <input type="text" id="migrationFromLat" placeholder="点击地图获取">
+                    </div>
+                    <div class="form-group">
+                        <label>出发地 - 经度</label>
+                        <input type="text" id="migrationFromLng" placeholder="点击地图获取">
+                    </div>
+                    <div class="form-group">
+                        <label>目的地 - 纬度</label>
+                        <input type="text" id="migrationToLat" placeholder="点击地图获取">
+                    </div>
+                    <div class="form-group">
+                        <label>目的地 - 经度</label>
+                        <input type="text" id="migrationToLng" placeholder="点击地图获取">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>迁徙描述</label>
+                        <textarea id="migrationDescription" rows="3" placeholder="简单介绍这次迁徙的历史背景..."></textarea>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="createMigration()">添加迁徙记录</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📍 迁徙路线地图</h3>
+                <div id="migration-map" style="width: 100%; height: 400px; border-radius: 8px; border: 1px solid #eee;"></div>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">提示：点击地图可以分别设置起点和终点坐标</p>
+            </div>
+
+            <div class="card">
+                <h2>📋 迁徙记录列表</h2>
+                <div class="activity-list" id="migration-list">
+                    <div class="empty">请先选择家谱</div>
+                </div>
+            </div>
+        </div>
+
         <div style="margin-top: 30px; text-align: center;">
             <a href="/">← 返回首页</a>
         </div>
@@ -510,6 +574,11 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelector(`.tab:not(.active)[onclick="switchTab('${tab}')"]`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
+
+        // 如果切换到迁徙地图，初始化地图
+        if (tab === 'migration' && document.getElementById('migration-map') && !window.migrationMap) {
+            loadAMap();
+        }
     }
 
     function loadMyGenealogies() {
@@ -521,6 +590,8 @@
             if (data.code === 0) {
                 const select1 = document.getElementById('genealogyId');
                 const select2 = document.getElementById('photoGenealogyId');
+                const select3 = document.getElementById('celebrityGenealogyId');
+                const select4 = document.getElementById('migrationGenealogyId');
                 data.data.forEach(g => {
                     const opt1 = document.createElement('option');
                     opt1.value = g.id;
@@ -531,6 +602,16 @@
                     opt2.value = g.id;
                     opt2.textContent = g.name;
                     select2.appendChild(opt2);
+
+                    const opt3 = document.createElement('option');
+                    opt3.value = g.id;
+                    opt3.textContent = g.name;
+                    select3.appendChild(opt3);
+
+                    const opt4 = document.createElement('option');
+                    opt4.value = g.id;
+                    opt4.textContent = g.name;
+                    select4.appendChild(opt4);
                 });
             }
         });
@@ -618,11 +699,13 @@
                 'construction': '祠堂修建',
                 'other': '其他活动'
             };
+            const typeName = typeNames[a.type] || a.type;
+
             html += `
                 <div class="activity-item">
                     <div class="activity-item-header">
                         <h3>${a.title}</h3>
-                        <span class="badge ${badgeClass}">${typeNames[a.type] || a.type}</span>
+                        <span class="badge ${badgeClass}">${typeName}</span>
                     </div>
                     <div style="margin-top:8px; color:#666;">
                         ${a.activityDate ? `📅 ${a.activityDate}` : ''}
@@ -726,10 +809,10 @@
         list.forEach(p => {
             html += `
                 <div class="photo-item">
-                    <img src="${p.url}" alt="${p.title}">
+                    ${p.url ? `<img src="${p.url}" alt="${p.title}">` : `<div style="height:120px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#999;">暂无照片</div>`}
                     <div class="photo-info">
                         <div class="photo-title">${p.title}</div>
-                        ${p.year ? `<div style="color:#666; font-size:12px">${p.year} • ${p.location || ''}</div>` : ''}
+                        ${p.year ? `<div style="color:#666; font-size:12px">${p.year} ${p.location ? ` • ${p.location}` : ''}</div>` : ''}
                         <div class="photo-actions" style="margin-top:8px">
                             <button class="btn btn-danger btn-sm" onclick="deletePhoto(${p.id}, ${p.genealogyId})">删除</button>
                         </div>
@@ -756,30 +839,6 @@
             }
         });
     }
-
-    function showMessage(elementId, message, isSuccess) {
-        const el = document.getElementById(elementId);
-        el.textContent = message;
-        el.className = 'result-message ' + (isSuccess ? 'success' : 'error');
-        setTimeout(() => {
-            setTimeout(() => el.style.display = 'none', 5000);
-        }, 100);
-    }
-
-    // 家谱选择改变
-    document.getElementById('genealogyId').addEventListener('change', e => {
-        const id = parseInt(e.target.value);
-        if (id) {
-            loadActivities(id);
-        }
-    });
-
-    document.getElementById('photoGenealogyId').addEventListener('change', e => {
-        const id = parseInt(e.target.value);
-        if (id) {
-            loadPhotos(id);
-        }
-    });
 
     // ========== 家族名人 ==========
     function createCelebrity() {
@@ -815,120 +874,4 @@
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
-        })
-        .then(res => res.json())
-        .then(result => {
-            if (result.success) {
-                showMessage('celebrityResultMessage', '添加成功', true);
-                document.getElementById('celebrityName').value = '';
-                document.getElementById('celebrityStyleName').value = '';
-                document.getElementById('celebrityHao').value = '';
-                document.getElementById('celebrityBirthYear').value = '';
-                document.getElementById('celebrityDeathYear').value = '';
-                document.getElementById('celebrityBirthPlace').value = '';
-                document.getElementById('celebrityTitle').value = '';
-                document.getElementById('celebrityBiography').value = '';
-                document.getElementById('celebrityPhotoUrl').value = '';
-                document.getElementById('celebrityGeneration').value = '';
-                loadCelebrities(genealogyId);
-            } else {
-                showMessage('celebrityResultMessage', result.message || '添加失败', false);
-            }
-        });
-    }
-
-    function loadCelebrities(genealogyId) {
-        fetch(`/api/family-celebrity/list/${genealogyId}`, {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                renderCelebrities(data.data);
-            }
-        });
-    }
-
-    function renderCelebrities(list) {
-        const container = document.getElementById('celebrity-list');
-        if (list.length === 0) {
-            container.innerHTML = '<div class="empty">该家谱还没有添加名人</div>';
-            return;
-        }
-        let html = '';
-        list.forEach(c => {
-            html += `
-                <div class="photo-item">
-                    ${c.photoUrl ? `<img src="${c.photoUrl}" alt="${c.name}">` : `<div style="height:120px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#999;">暂无照片</div>`}
-                    <div class="photo-info">
-                        <div class="photo-title">${c.name} ${c.title ? ` - ${c.title}` : ''}</div>
-                        <div style="color:#666; font-size:12px">${c.birthYear || ''} - ${c.deathYear || ''} ${c.birthPlace ? ` • ${c.birthPlace}` : ''}</div>
-                        <div class="photo-actions" style="margin-top:8px">
-                            <button class="btn btn-danger btn-sm" onclick="deleteCelebrity(${c.id}, ${c.genealogyId})">删除</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
-    }
-
-    function deleteCelebrity(id, genealogyId) {
-        if (!confirm('确定要删除这位名人吗？')) return;
-        fetch(`/api/family-celebrity/delete/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                showMessage('celebrityResultMessage', '删除成功', true);
-                loadCelebrities(genealogyId);
-            } else {
-                showMessage('celebrityResultMessage', data.message || '删除失败', false);
-            }
-        });
-    }
-
-    // 家谱选择改变 同时加载照片和名人
-    document.getElementById('celebrityGenealogyId').addEventListener('change', e => {
-        const id = parseInt(e.target.value);
-        if (id) {
-            loadCelebrities(id);
-        }
-    });
-
-    // 加载家谱列表同时填充三个下拉框
-    function loadMyGenealogies() {
-        fetch('/api/genealogy/my', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.code === 0) {
-                const select1 = document.getElementById('genealogyId');
-                const select2 = document.getElementById('photoGenealogyId');
-                const select3 = document.getElementById('celebrityGenealogyId');
-                data.data.forEach(g => {
-                    const opt1 = document.createElement('option');
-                    opt1.value = g.id;
-                    opt1.textContent = g.name;
-                    select1.appendChild(opt1);
-
-                    const opt2 = document.createElement('option');
-                    opt2.value = g.id;
-                    opt2.textContent = g.name;
-                    select2.appendChild(opt2);
-
-                    const opt3 = document.createElement('option');
-                    opt3.value = g.id;
-                    opt3.textContent = g.name;
-                    select3.appendChild(opt3);
-                });
-            }
-        });
-    }
-</script>
-</body>
-</html>
+            body: JSON.stringify

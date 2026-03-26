@@ -400,8 +400,28 @@
     }
 
     function upgrade(level) {
-        // 跳转到支付宝支付
-        window.location.href = '/api/payment/alipay/create?level=' + level;
+        // 支持支付宝 + 微信支付选择
+        if (confirm('选择支付方式:\\n• 确定 = 微信支付\\n• 取消 = 支付宝支付')) {
+            doWechatPay(level);
+        } else {
+            // 跳转到支付宝支付
+            window.location.href = '/api/payment/alipay/create?level=' + level;
+        }
+    }
+
+    function doWechatPay(level) {
+        fetch('/api/payment/wechat/create?level=' + level, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // 微信H5支付跳转
+                window.location.href = data.h5Url;
+            } else {
+                alert(data.message || '创建订单失败');
+            }
+        });
     }
 
     function loadOrders() {

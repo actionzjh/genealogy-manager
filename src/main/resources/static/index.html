@@ -73,6 +73,27 @@
         .card a:hover {
             text-decoration: underline;
         }
+        .user-bar {
+            background: rgba(0,0,0,0.1);
+            padding: 10px 20px;
+            text-align: right;
+        }
+        .notification-link {
+            color: white;
+            text-decoration: none;
+            position: relative;
+        }
+        .notification-badge {
+            display: inline-block;
+            background: #ff4d4f;
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+            min-width: 18px;
+            text-align: center;
+        }
         .stats {
             background: white;
             border-radius: 10px;
@@ -274,8 +295,10 @@
                 <ul>
                     <li>📷 <a href="ocr-recognize.html" target="_blank">老谱OCR识别</a> ✨ 新增</li>
                     <li>🔍 <a href="zi-query.html" target="_blank">字辈查询</a> ✨ 新增</li>
+                    <li>🖼️ <a href="image-upload.html" target="_blank">图片上传</a> ✨ 新增</li>
                     <li>🖼️ 自动生成分享海报</li>
                     <li>老照片文字识别，快速录入</li>
+                    <li>云存储图片，支持外链</li>
                     <li>对外字辈查询，吸引搜索流量</li>
                 </ul>
             </div>
@@ -293,9 +316,9 @@
                 <ul>
                     <li><a href="interactive-tree.html" target="_blank">交互式世系图</a> ✨ 新增</li>
                     <li><a href="person-timeline.html" target="_blank">家族时间线</a> ✨ 新增</li>
+                    <li><a href="relation-graph.html" target="_blank">血缘关系网络图</a> ✨ 新增</li>
                     <li><a href="hierarchy-visualizer.html" target="_blank">支系层级可视化</a></li>
                     <li><a href="zhangshi-jiadao.html" target="_blank">交互式家谱仪表板</a></li>
-                    <li>迁徙路线地图（待开发）</li>
                 </ul>
             </div>
         </div>
@@ -327,6 +350,23 @@
                 document.querySelector('.stats-grid .stat-item:nth-child(3) .stat-number').textContent = data.totalFamilies || 0;
             })
             .catch(err => console.error('获取统计失败', err));
+
+        // 获取未读通知数量
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetch('/api/notification/unread-count', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.count > 0) {
+                    const badge = document.getElementById('notification-badge');
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.style.display = 'inline-block';
+                }
+            })
+            .catch(err => console.error('获取通知失败', err));
+        }
     </script>
 </body>
 </html>

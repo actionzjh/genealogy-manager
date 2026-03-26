@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血缘关系可视化 - 家谱管理系统</title>
+    <style>
+        :root{
+            --bg:#f4efe6;
+            --panel:#fffdfa;
+            --text:#2f2419;
+            --muted:#7a6752;
+            --line:#dfd1bc;
+            --primary:#8a4b24;
+            --primary-2:#b96d3b;
+            --male:#669eea;
+            --female:#f7879a;
+            --shadow:0 10px 30px rgba(73,48,24,.12);
+        }
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+            color:var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(185,109,59,.16), transparent 28%),
+                linear-gradient(180deg, #fbf7f1 0%, var(--bg) 100%);
+            min-height:100vh;
+        }
+        .header{
+            background:rgba(255,253,250,.92);
+            backdrop-filter:blur(10px);
+            border-bottom:1px solid rgba(138,75,36,.14);
+            padding:16px 24px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            position:sticky;
+            top:0;
+            z-index:100;
+        }
+        .header h1{font-size:20px;margin:0}
+        .btn{
+            cursor:pointer;
+            padding:10px 18px;
+            border-radius:999px;
+            border:1px solid var(--line);
+            background:#fff;
+            transition:.2s;
+            font-size:14px;
+        }
+        .btn:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(73,48,24,.08)}
+        .btn-primary{
+            background:linear-gradient(135deg,var(--primary),var(--primary-2));
+            color:#fff;
+            border-color:transparent;
+        }
+        .container{
+            display:grid;
+            grid-template-columns:300px 1fr;
+            gap:20px;
+            padding:20px;
+            max-width:1400px;
+            margin:0 auto;
+        }
+        .panel{
+            background:var(--panel);
+            border:1px solid rgba(138,75,36,.12);
+            border-radius:16px;
+            padding:20px;
+            box-shadow:var(--shadow);
+        }
+        .panel h2{
+            margin:0 0 15px;
+            font-size:18px;
+        }
+        .form-group{
+            margin-bottom:15px;
+        }
+        .form-group label{
+            display:block;
+            margin-bottom:6px;
+            color:var(--muted);
+            font-size:14px;
+        }
+        .form-group select,
+        .form-group input{
+            width:100%;
+            padding:10px 12px;
+            border:1px solid var(--line);
+            border-radius:8px;
+            background:white;
+        }
+        .actions{
+            display:flex;
+            gap:10px;
+            margin-top:20px;
+        }
+        .actions .btn{flex:1}
+        #graph-container{
+            width:100%;
+            height:calc(100vh - 100px);
+            background:white;
+            border-radius:16px;
+            border:1px solid rgba(138,75,36,.12);
+            overflow:hidden;
+        }
+        .saved-list{
+            margin-top:20px;
+        }
+        .saved-item{
+            padding:10px;
+            border:1px solid var(--line);
+            border-radius:8px;
+            margin-bottom:8px;
+            cursor:pointer;
+            transition:.2s;
+        }
+        .saved-item:hover{background:#f7f1e7}
+        .saved-item-name{font-weight:500}
+        .saved-item-actions{display:flex;gap:6px;margin-top:6px}
+        .saved-item-actions .btn{padding:4px 8px;font-size:12px}
+
+        /* 图例 */
+        .legend{
+            margin-top:15px;
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+        .legend-item{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            font-size:13px;
+        }
+        .legend-marker{
+            width:20px;
+            height:20px;
+            border-radius:50%;
+        }
+        .marker-male{background:var(--male)}
+        .marker-female{background:var(--female)}
+
+        @media (max-width: 960px){
+            .container{grid-template-columns:1fr}
+            #graph-container{height:600px}
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🕸️ 血缘关系可视化</h1>
+        <div>
+            <a class="btn" href="/">← 返回首页</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <h2>⚙️ 参数设置</h2>
+
+            <div class="form-group">
+                <label>选择家谱</label>
+                <select id="genealogyId"></select>
+            </div>
+
+            <div class="form-group">
+                <label>中心人物</label>
+                <select id="centerPersonId">
+                    <option value="">-- 先选择家谱 --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>拓展深度 (默认3代)</label>
+                <input type="number" id="depth" value="3" min="1" max="6">
+            </div>
+
+            <div class="form-group">
+                <label>视图名称 (保存后可复用)</label>
+                <input type="text" id="graphName" placeholder="例如：我的家族关系图">
+            </div>
+
+            <div class="form-group">
+                <label>是否公开</label>
+                <select id="isPublic">
+                    <option value="false">不公开</option>
+                    <option value="true">公开（对外展示）</option>
+                </select>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" onclick="generateGraph()">生成</button>
+                <button class="btn" onclick="saveGraph()">保存</button>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-marker marker-male"></div>
+                    <span>男性</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-marker marker-female"></div>
+                    <span>女性</span>
+                </div>
+            </div>
+
+            <div class="saved-list">
+                <h3>已保存视图</h3>
+                <div id="saved-list"></div>
+            </div>
+        </div>
+
+        <div class="panel" style="padding:0">
+            <div id="graph-container"></div>
+        </div>
+    </div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    const token = localStorage.getItem('token');
+    let currentGraphData = null;
+    let currentSvg = null;
+    let simulation = null;
+
+    // 页面加载
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMyGenealogies();
+    });
+
+    function loadMyGenealogies() {
+        fetch('/api/genealogy/my', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 0) {
+                const select = document.getElementById('genealogyId');
+                data.data.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = g.name;
+                    select.appendChild(opt);
+                });
+                // 监听家谱变化
+                select.addEventListener('change', () => {
+                    loadSavedGraphs();
+                    loadPeopleForGenealogy(select.value);
+                });
+            }
+        });
+    }
+
+    function loadPeopleForGenealogy(genealogyId) {
+        const select = document.getElementById('centerPersonId');
+        select.innerHTML = '<option value="">-- 选择中心人物 --</option>';
+        fetch(`/api/person/list/${genealogyId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 0) {
+                data.data.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.name} (${p.generation || 0}代)`;
+                    select.appendChild(opt);
+                });
+            }
+        });
+    }
+
+    function loadSavedGraphs() {
+        const genealogyId = document.getElementById('genealogyId').value;
+        if (!genealogyId) return;
+        const container = document.getElementById('saved-list');
+        fetch(`/api/relation-graph/list/${genealogyId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (data.data.length === 0) {
+                    container.innerHTML = '<div style="color:var(--muted);font-size:14px">暂无保存的视图</div>';
+                    return;
+                }
+                let html = '';
+                data.data.forEach(g => {
+                    html += `
+                        <div class="saved-item" onclick="loadSavedGraph(${g.id}, ${g.centerPersonId}, ${g.depth})">
+                            <div class="saved-item-name">${g.name} <span style="color:var(--muted);font-size:12px">(${g.depth}代)</span></div>
+                            <div class="saved-item-actions">
+                                <button class="btn" onclick="event.stopPropagation();deleteGraph(${g.id})">删除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+        });
+    }
+
+    function loadSavedGraph(id, centerPersonId, depth) {
+        document.getElementById('centerPersonId').value = centerPersonId;
+        document.getElementById('depth').value = depth;
+        generateGraph();
+    }
+
+    function deleteGraph(id) {
+        if (!confirm('确定删除这个视图吗？')) return;
+        fetch(`/api/relation-graph/delete/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                loadSavedGraphs();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function generateGraph() {
+        const genealogyId = document.getElementById('genealogyId').value;
+        const centerPersonId = parseInt(document.getElementById('centerPersonId').value);
+        const depth = parseInt(document.getElementById('depth').value || 3);
+
+        if (!genealogyId || !centerPersonId) {
+            alert('请选择家谱和中心人物');
+            return;
+        }
+
+        fetch(`/api/relation-graph/build?centerPersonId=${centerPersonId}&depth=${depth}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                currentGraphData = result.data.data;
+                renderD3Graph(currentGraphData);
+            } else {
+                alert(result.message || '生成失败');
+            }
+        });
+    }
+
+    function saveGraph() {
+        const genealogyId = document.getElementById('genealogyId').value;
+        const centerPersonId = parseInt(document.getElementById('centerPersonId').value);
+        const depth = parseInt(document.getElementById('depth').value || 3);
+        const name = document.getElementById('graphName').value.trim();
+        const isPublic = document.getElementById('isPublic').value === 'true';
+
+        if (!genealogyId || !centerPersonId) {
+            alert('请先生成图');
+            return;
+        }
+        if (!name) {
+            alert('请填写视图名称');
+            return;
+        }
+
+        const data = {
+            genealogyId: parseInt(genealogyId),
+            centerPersonId: centerPersonId,
+            depth: depth,
+            name: name,
+            isPublic: isPublic
+        };
+
+        fetch('/api/relation-graph/create', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                alert('保存成功');
+                loadSavedGraphs();
+            } else {
+                alert(result.message || '保存失败');
+            }
+        });
+    }
+
+    function renderD3Graph(data) {
+        const container = document.getElementById('graph-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        // 清空容器
+        container.innerHTML = '';
+
+        const svg = d3.select(container)
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const g = svg.append('g');
+
+        // 缩放拖拽
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+        svg.call(zoom);
+
+        const nodes = data.nodes;
+        const links = data.links;
+
+        // 力导向模拟
+        simulation = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-400))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collide', d3.forceCollide().radius(30));
+
+        // 画线
+        const link = g.append('g')
+            .selectAll('line')
+            .data(links)
+            .enter().append('line')
+            .attr('stroke', '#999')
+            .attr('stroke-width', 2);
+
+        // 画节点
+        const node = g.append('g')
+            .selectAll('circle')
+            .data(nodes)
+            .enter().append('circle')
+            .attr('r', 20)
+            .attr('fill', d => d.gender === 'male' ? '#669eea' : '#f7879a')
+            .call(d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended));
+
+        // 文字标签
+        const labels = g.append('g')
+            .selectAll('text')
+            .data(nodes)
+            .enter().append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dy', 35)
+            .attr('font-size', '12px')
+            .attr('fill', '#2f2419')
+            .text(d => d.name);
+
+        simulation.on('tick', () => {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+
+            node
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+
+            labels
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+        });
+
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            // 释放节点，保持位置
+            // event.subject.fx = null;
+            // event.subject.fy = null;
+        }
+
+        currentSvg = svg;
+    }
+</script>
+</body>
+</html>

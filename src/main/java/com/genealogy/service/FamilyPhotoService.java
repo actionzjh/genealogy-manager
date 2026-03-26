@@ -74,6 +74,7 @@ public class FamilyPhotoService {
     /**
      * 获取公开照片列表
      */
+    @org.springframework.cache.annotation.Cacheable(value = "familyPhoto", key = "#genealogyId")
     public List<FamilyPhoto> listPublic(Long genealogyId) {
         return photoRepository.findByGenealogyIdAndIsPublicTrueOrderBySortOrderDescCreatedAtDesc(genealogyId);
     }
