@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会员中心 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header h1 {
+            font-size: 28px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .membership-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        .info-item label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .info-item .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .value-0 {
+            color: #909399;
+        }
+        .value-1 {
+            color: #67c23a;
+        }
+        .value-2 {
+            color: #e6a23c;
+        }
+        .plan-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .plan-card {
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .plan-card.recommended {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        .plan-card.recommended .badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .plan-card h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        .plan-card .price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .plan-card .price span {
+            font-size: 14px;
+            color: #999;
+            font-weight: normal;
+        }
+        .plan-card ul {
+            text-align: left;
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        .plan-card li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .btn-upgrade {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-upgrade:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-upgrade:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+        .quota-info {
+            margin-top: 20px;
+        }
+        .quota-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .quota-item .label {
+            color: #666;
+        }
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #67c23a 0%, #e6a23c 100%);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .progress-danger .progress-bar {
+            background: #f56c6c;
+        }
+        .result-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .result-message.success {
+            background: #f0f9eb;
+            border: 1px solid #e1f3d8;
+            color: #67c23a;
+            display: block;
+        }
+        .result-message.error {
+            background: #fef0f0;
+            border: 1px solid #fde2e2;
+            color: #f56c6c;
+            display: block;
+        }
+        .order-list {
+            display: grid;
+            gap: 12px;
+        }
+        .order-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
+            align-items: center;
+        }
+        .order-info .order-no {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .order-info .order-date {
+            color: #999;
+            font-size: 12px;
+        }
+        .order-amount {
+            font-weight: bold;
+            font-size: 18px;
+            color: #e6a23c;
+        }
+        .order-status {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .status-CREATED {
+            background: #fdf6ec;
+            color: #e6a23c;
+        }
+        .status-PAID {
+            background: #f0f9eb;
+            color: #67c23a;
+        }
+        .status-CANCELLED {
+            background: #f4f4f5;
+            color: #909399;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .container {
+                margin: 15px auto;
+                padding: 0 10px;
+            }
+            .card {
+                padding: 18px;
+            }
+            .plan-card.recommended {
+                transform: none;
+            }
+            .order-item {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>⭐ 会员中心</h1>
+            <p>查看会员等级和额度，升级会员解锁更多功能</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="result-message" id="resultMessage"></div>
+
+        <div class="card">
+            <h2>📊 我的会员信息</h2>
+            <div class="membership-info" id="membership-info">
+                <div class="info-item">
+                    <label>会员等级</label>
+                    <div class="value" id="membership-level">加载中...</div>
+                </div>
+                <div class="info-item">
+                    <label>过期时间</label>
+                    <div class="value" id="expire-at">永久有效</div>
+                </div>
+            </div>
+            <div class="quota-info">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #333;">已用额度</h3>
+                <div id="quota-list">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💎 会员套餐</h2>
+            <div class="plan-list" id="plan-list">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 我的订单</h2>
+            <div class="order-list" id="order-list">
+                <div class="empty" style="text-align:center; padding:20px; color:#999;">加载中...</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+<script>
+    const token = localStorage.getItem('token');
+    const currentUserId = localStorage.getItem('userId');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMembershipInfo();
+        loadPlans();
+        loadOrders();
+    });
+
+    function loadMembershipInfo() {
+        fetch('/api/membership/my', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderMembershipInfo(data.data);
+            }
+        });
+    }
+
+    function renderMembershipInfo(info) {
+        document.getElementById('membership-level').textContent = info.membershipLevelName;
+        document.getElementById('membership-level').className = 'value value-' + info.membershipLevel;
+        document.getElementById('expire-at').textContent = info.membershipExpireAt || '永久有效';
+
+        // 渲染额度
+        const quotaList = document.getElementById('quota-list');
+        const quotas = [
+            { label: '家谱数量', used: info.usedGenealogies, max: info.maxGenealogies },
+            { label: '协作者数量', used: info.usedCollaborators, max: info.maxCollaborators }
+        ];
+        let html = '';
+        quotas.forEach(q => {
+            const percent = q.max > 0 ? Math.round((q.used / q.max) * 100) : 0;
+            const dangerClass = percent > 80 ? 'progress-danger' : '';
+            html += `
+                <div class="quota-item">
+                    <div>
+                        <span class="label">${q.label}</span>
+                        <span>${q.used} / ${q.max}</span>
+                    </div>
+                    <div class="progress ${dangerClass}">
+                        <div class="progress-bar" style="width: ${percent}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+        quotaList.innerHTML = html;
+    }
+
+    function loadPlans() {
+        fetch('/api/payment/plans')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderPlans(data.data);
+            }
+        });
+    }
+
+    function renderPlans(plans) {
+        const container = document.getElementById('plan-list');
+        let html = '';
+        plans.forEach((plan, idx) => {
+            const isRecommended = plan.level === 1;
+            const levelNames = [
+                { level: 0, name: '免费版', months: 0, price: 0 },
+                { level: 1, name: '基础会员', months: 12, price: 99 },
+                { level: 2, name: '高级会员', months: 12, price: 299 }
+            ];
+            const currentLevel = parseInt(document.querySelector('.value').className.split('-')[1]) || 0;
+            const disabled = plan.level === currentLevel;
+
+            html += `
+                <div class="plan-card ${isRecommended ? 'recommended' : ''}">
+                    ${isRecommended ? '<div class="badge">推荐</div>' : ''}
+                    <h3>${plan.name}</h3>
+                    <div class="price">¥ ${plan.price}<span>/${plan.months}个月</span></div>
+                    <ul>
+                        <li>✅ 最多 ${plan.maxGenealogy} 个家谱</li>
+                        <li>✅ 单家谱最多 ${plan.maxPeoplePerGenealogy} 人</li>
+                        <li>✅ 最多 ${plan.maxCollaborators} 个协作者</li>
+                        <li>✅ ${plan.level >= 1 ? '完整寻根匹配功能' : '基础寻根匹配'}</li>
+                        <li>✅ ${plan.level >= 1 ? '不限活动发布数量' : '限制活动数量'}</li>
+                        <li>✅ ${plan.level >= 2 ? '优先级技术支持' : '社区支持'}</li>
+                    </ul>
+                    <button class="btn-upgrade" ${disabled ? 'disabled' : ''} onclick="upgrade(${plan.level})">${disabled ? '当前套餐' : '立即购买'}</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function upgrade(level) {
+        // 跳转到支付宝支付
+        window.location.href = '/api/payment/alipay/create?level=' + level;
+    }
+
+    function loadOrders() {
+        fetch('/api/payment/orders', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderOrders(data.data);
+            }
+        });
+    }
+
+    function renderOrders(orders) {
+        const container = document.getElementById('order-list');
+        if (orders.length === 0) {
+            container.innerHTML = '<div class="empty" style="text-align:center; padding:20px; color:#999;">暂无订单</div>';
+            return;
+        }
+        let html = '';
+        const statusLabels = {
+            'CREATED': '待支付',
+            'PAID': '已支付',
+            'CANCELLED': '已取消',
+            'CLOSED': '已关闭'
+        };
+        orders.forEach(o => {
+            html += `
+                <div class="order-item">
+                    <div class="order-info">
+                        <div class="order-no">${o.subject}</div>
+                        <div class="order-date">${o.outTradeNo} • ${o.createdAt}</div>
+                    </div>
+                    <div class="order-amount">¥ ${o.amount}</div>
+                    <div class="order-status status-${o.status}">${statusLabels[o.status] || o.status}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function showMessage(message, isSuccess) {
+        const el = document.getElementById('resultMessage');
+        el.textContent = message;
+        el.className = 'result-message ' + (isSuccess ? 'success' : 'error');
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+</script>
+</body>
+</html>

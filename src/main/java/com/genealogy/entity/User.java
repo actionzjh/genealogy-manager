@@ -68,10 +68,52 @@ public class User {
      */
     private LocalDateTime lastLoginAt;
 
+    /**
+     * 会员等级:
+     * FREE - 免费版（默认）
+     * BASIC - 基础会员
+     * PREMIUM - 高级会员
+     */
+    @Column(length = 20)
+    private String membershipLevel = "FREE";
+
+    /**
+     * 会员过期时间
+     */
+    private LocalDateTime membershipExpireAt;
+
+    /**
+     * 最大家谱数量
+     */
+    private Integer maxGenealogies;
+
+    /**
+     * 单家谱最大人物数量
+     */
+    private Integer maxPersonsPerGenealogy;
+
+    /**
+     * 最大协作者数量
+     */
+    private Integer maxCollaborators;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+        // 默认免费版额度
+        if (membershipLevel == null) {
+            membershipLevel = "FREE";
+        }
+        if (maxGenealogies == null) {
+            maxGenealogies = 1; // 免费版只能建1个家谱
+        }
+        if (maxPersonsPerGenealogy == null) {
+            maxPersonsPerGenealogy = 500; // 免费版最多500人
+        }
+        if (maxCollaborators == null) {
+            maxCollaborators = 2; // 免费版最多2个协作者
+        }
     }
 
     @PreUpdate

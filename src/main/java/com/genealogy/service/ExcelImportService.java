@@ -36,6 +36,7 @@ public class ExcelImportService {
         private int genealogyCount;
         private int personCount;
         private List<String> errors;
+        private List<String> warnings;
         private Long genealogyId;
 
         public static ImportResult success(Long genealogyId, int genealogyCount, int personCount) {
@@ -44,6 +45,7 @@ public class ExcelImportService {
             result.setGenealogyCount(genealogyCount);
             result.setPersonCount(personCount);
             result.setErrors(new ArrayList<>());
+            result.setWarnings(new ArrayList<>());
             return result;
         }
 
@@ -52,6 +54,7 @@ public class ExcelImportService {
             result.setGenealogyCount(0);
             result.setPersonCount(0);
             result.setErrors(new ArrayList<>());
+            result.setWarnings(new ArrayList<>());
             result.getErrors().add(message);
             return result;
         }
@@ -60,8 +63,16 @@ public class ExcelImportService {
             this.errors.add(error);
         }
 
+        public void addWarning(String warning) {
+            this.warnings.add(warning);
+        }
+
         public boolean hasErrors() {
             return errors != null && !errors.isEmpty();
+        }
+
+        public boolean hasWarnings() {
+            return warnings != null && !warnings.isEmpty();
         }
     }
 
@@ -102,8 +113,20 @@ public class ExcelImportService {
 
             // 姓名->人物ID映射，用于建立关系
             Map<String, Long> nameToIdMap = new ConcurrentHashMap<>();
+            Map<String, PersonImportDto> nameToDtoMap = new ConcurrentHashMap<>();
             List<String> errors = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
             int successCount = 0;
+
+            // 第一遍：数据校验
+            List<String> validationWarnings = validatePersonData(personDtoList);
+            warnings.addAll(validationWarnings);
+
+            // 检查重复姓名
+            Set<String> duplicateNames = findDuplicateNames(personDtoList);
+            if (!duplicateNames.isEmpty()) {
+                warnings.add("检测到重复姓名: " + String.join(", ", duplicateNames) + "，关系建立可能不准确，建议Excel中区分开");
+            }
 
             // 第一遍：保存所有人物，建立姓名映射（假设同一姓名不重复，如果有重复需要用其他标识）
             for (PersonImportDto dto : personDtoList) {
@@ -112,21 +135,25 @@ public class ExcelImportService {
                     continue;
                 }
 
+                String nameTrim = dto.getName().trim();
+                if (nameToIdMap.containsKey(nameTrim)) {
+                    warnings.add("人物姓名[" + nameTrim + "]重复，已存在，后一条覆盖前一条");
+                }
+
                 Person person = convertToPerson(dto);
                 person = personRepository.save(person);
-                nameToIdMap.put(dto.getName().trim(), person.getId());
-                if (dto.getFatherName() != null && !dto.getFatherName().trim().isEmpty()) {
-                    // 父亲姓名先记录，第二遍处理
-                }
+                nameToIdMap.put(nameTrim, person.getId());
+                nameToDtoMap.put(nameTrim, dto);
                 successCount++;
             }
 
-            // 第二遍：处理亲属关系（根据姓名查找ID）
+            // 第二遍：处理亲属关系（根据姓名查找ID）+ 出生日期合理性校验
             for (PersonImportDto dto : personDtoList) {
                 if (dto.getName() == null || dto.getName().trim().isEmpty()) {
                     continue;
                 }
-                Long personId = nameToIdMap.get(dto.getName().trim());
+                String nameTrim = dto.getName().trim();
+                Long personId = nameToIdMap.get(nameTrim);
                 if (personId == null) {
                     continue;
                 }
@@ -138,27 +165,46 @@ public class ExcelImportService {
 
                 // 处理父亲关系
                 if (dto.getFatherName() != null && !dto.getFatherName().trim().isEmpty()) {
-                    Long fatherId = nameToIdMap.get(dto.getFatherName().trim());
+                    String fatherNameTrim = dto.getFatherName().trim();
+                    Long fatherId = nameToIdMap.get(fatherNameTrim);
                     if (fatherId != null) {
                         person.setFatherId(fatherId);
+                        // 校验出生年份合理性
+                        PersonImportDto fatherDto = nameToDtoMap.get(fatherNameTrim);
+                        if (fatherDto != null) {
+                            String validationWarning = validateBirthDateOrder(fatherDto, dto, nameTrim);
+                            if (validationWarning != null) {
+                                warnings.add(validationWarning);
+                            }
+                        }
                     } else {
-                        errors.add("人物[" + dto.getName() + "]的父亲[" + dto.getFatherName() + "]未找到，跳过关系建立");
+                        warnings.add("人物[" + dto.getName() + "]的父亲[" + dto.getFatherName() + "]未找到，跳过关系建立");
                     }
                 }
 
                 // 处理母亲关系
                 if (dto.getMotherName() != null && !dto.getMotherName().trim().isEmpty()) {
-                    Long motherId = nameToIdMap.get(dto.getMotherName().trim());
+                    String motherNameTrim = dto.getMotherName().trim();
+                    Long motherId = nameToIdMap.get(motherNameTrim);
                     if (motherId != null) {
                         person.setMotherId(motherId);
+                        // 校验出生年份合理性
+                        PersonImportDto motherDto = nameToDtoMap.get(motherNameTrim);
+                        if (motherDto != null) {
+                            String validationWarning = validateBirthDateOrder(motherDto, dto, nameTrim);
+                            if (validationWarning != null) {
+                                warnings.add(validationWarning);
+                            }
+                        }
                     } else {
-                        errors.add("人物[" + dto.getName() + "]的母亲[" + dto.getMotherName() + "]未找到，跳过关系建立");
+                        warnings.add("人物[" + dto.getName() + "]的母亲[" + dto.getMotherName() + "]未找到，跳过关系建立");
                     }
                 }
 
                 // 处理配偶关系
                 if (dto.getSpouseName() != null && !dto.getSpouseName().trim().isEmpty()) {
-                    Long spouseId = nameToIdMap.get(dto.getSpouseName().trim());
+                    String spouseNameTrim = dto.getSpouseName().trim();
+                    Long spouseId = nameToIdMap.get(spouseNameTrim);
                     if (spouseId != null) {
                         person.setSpouseIds(String.valueOf(spouseId));
                         // 反向设置配偶
@@ -168,7 +214,7 @@ public class ExcelImportService {
                             personRepository.save(spouse);
                         }
                     } else {
-                        errors.add("人物[" + dto.getName() + "]的配偶[" + dto.getSpouseName() + "]未找到，跳过关系建立");
+                        warnings.add("人物[" + dto.getName() + "]的配偶[" + dto.getSpouseName() + "]未找到，跳过关系建立");
                     }
                 }
 
@@ -193,6 +239,7 @@ public class ExcelImportService {
 
             ImportResult result = ImportResult.success(genealogy.getId(), 1, successCount);
             result.getErrors().addAll(errors);
+            result.getWarnings().addAll(warnings);
             return result;
 
         } catch (Exception e) {
@@ -262,6 +309,87 @@ public class ExcelImportService {
     }
 
     /**
+     * 校验所有人的数据，返回警告信息
+     */
+    private List<String> validatePersonData(List<PersonImportDto> personDtoList) {
+        List<String> warnings = new ArrayList<>();
+        int nullGenerationCount = 0;
+        for (PersonImportDto dto : personDtoList) {
+            if (dto.getGeneration() == null) {
+                nullGenerationCount++;
+            }
+        }
+        if (nullGenerationCount > 0) {
+            warnings.add("有" + nullGenerationCount + "条记录未填写世代代数，可能影响排序和显示");
+        }
+        return warnings;
+    }
+
+    /**
+     * 查找重复姓名
+     */
+    private Set<String> findDuplicateNames(List<PersonImportDto> personDtoList) {
+        Set<String> names = new HashSet<>();
+        Set<String> duplicates = new HashSet<>();
+        for (PersonImportDto dto : personDtoList) {
+            if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+                continue;
+            }
+            String name = dto.getName().trim();
+            if (!names.add(name)) {
+                duplicates.add(name);
+            }
+        }
+        return duplicates;
+    }
+
+    /**
+     * 校验父母出生年份是否合理（父亲/母亲不能比孩子晚出生）
+     */
+    private String validateBirthDateOrder(PersonImportDto parent, PersonImportDto child, String childName) {
+        if (parent.getBirthYear() == null || parent.getBirthYear().isEmpty() ||
+            child.getBirthYear() == null || child.getBirthYear().isEmpty()) {
+            return null;
+        }
+        try {
+            // 处理公元前（负数）
+            int parentYear = parseBirthYear(parent.getBirthYear());
+            int childYear = parseBirthYear(child.getBirthYear());
+
+            // 正常来说父母至少比孩子大15岁
+            if (childYear <= parentYear) {
+                return String.format("数据警告: %s(%d年出生)的父母%s(%d年出生)出生年份晚于或等于孩子，可能有误",
+                        childName, childYear, parent.getName(), parentYear);
+            }
+            if (childYear - parentYear < 10) {
+                return String.format("数据提示: %s(%d)与父母%s(%d)年龄差仅%d岁，可能有误，请检查",
+                        childName, childYear, parent.getName(), parentYear, childYear - parentYear);
+            }
+            // 父母年龄差太大也提示一下（超过60岁）
+            if (childYear - parentYear > 60) {
+                return String.format("数据提示: %s(%d)与父母%s(%d)年龄差%d岁，请注意是否正确",
+                        childName, childYear, parent.getName(), parentYear, childYear - parentYear);
+            }
+        } catch (NumberFormatException e) {
+            // 无法解析年份，不报错，只跳过
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * 解析出生年份，支持"公元前100" → -100，"1600" → 1600
+     */
+    private int parseBirthYear(String yearStr) {
+        yearStr = yearStr.trim();
+        if (yearStr.startsWith("公元前") || yearStr.startsWith("前")) {
+            String numStr = yearStr.replace("公元前", "").replace("前", "").trim();
+            return -Integer.parseInt(numStr);
+        }
+        return Integer.parseInt(yearStr.replaceAll("[^0-9-]", ""));
+    }
+
+    /**
      * 生成Excel模板文件（下载模板用）
      */
     public void writeTemplate(java.io.OutputStream outputStream) {
@@ -314,6 +442,7 @@ public class ExcelImportService {
         dto.setOccupation("");
         dto.setMaritalStatus("已婚");
         dto.setStatus("去世");
+        dto.setRemark("");
         return Collections.singletonList(dto);
     }
 }

@@ -123,6 +123,19 @@
             .layout{grid-template-columns:1fr}
             .hero h1{font-size:28px}
         }
+        @media (max-width:600px){
+            main{padding:15px 12px 30px}
+            .hero{padding:20px;border-radius:20px}
+            .hero h1{font-size:24px}
+            .topbar{padding:12px 12px}
+            .topbar .actions{gap:6px}
+            .topbar .btn{padding:8px 12px}
+            .brand strong{font-size:16px}
+            .brand .muted{display:none}
+            .filters > *{flex:1 1 140px}
+            .panel-body{padding:16px}
+            .metrics{grid-template-columns:repeat(2,1fr)}
+        }
     </style>
     <link rel="stylesheet" href="/task-module-pattern.css">
 </head>

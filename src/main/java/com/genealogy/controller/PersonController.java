@@ -1,7 +1,11 @@
 package com.genealogy.controller;
 
 import com.genealogy.entity.Person;
+import com.genealogy.service.GenealogyService;
+import com.genealogy.service.MembershipService;
+import com.genealogy.service.OperationLogService;
 import com.genealogy.service.PersonService;
+import com.genealogy.service.PersonVersionService;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,16 +29,58 @@ public class PersonController {
     @Autowired
     private PersonService personService;
 
+    @Autowired
+    private GenealogyService genealogyService;
+
+    @Autowired
+    private MembershipService membershipService;
+
+    @Autowired
+    private PersonVersionService personVersionService;
+
+    @Autowired
+    private OperationLogService operationLogService;
+
     private final Gson gson = new Gson();
 
     /**
      * 新增人物
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(@RequestBody Person person) {
+    public ResponseEntity<Map<String, Object>> create(@RequestBody Person person, Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
         try {
+            if (authentication == null || authentication.getPrincipal() == null) {
+                result.put("code", 401);
+                result.put("message", "请先登录");
+                return ResponseEntity.status(401).body(result);
+            }
+            Long userId = (Long) authentication.getPrincipal();
+
+            // 权限检查：需要对家谱有编辑权限
+            if (person.getGenealogyId() != null && !genealogyService.canEdit(person.getGenealogyId(), userId)) {
+                result.put("code", 403);
+                result.put("message", "无权修改此家谱，请确认你有编辑权限");
+                return ResponseEntity.status(403).body(result);
+            }
+
+            // 会员额度检查：检查是否超出单家谱最大人数
+            if (person.getGenealogyId() != null) {
+                int currentCount = Math.toIntExact(personService.countByGenealogyId(person.getGenealogyId()));
+                MembershipService.CheckResult check = membershipService.canAddPerson(userId, person.getGenealogyId(), currentCount);
+                if (!check.isAllowed()) {
+                    result.put("code", 403);
+                    result.put("message", check.getMessage());
+                    result.put("needUpgrade", true);
+                    return ResponseEntity.status(403).body(result);
+                }
+            }
+
             Person saved = personService.save(person);
+
+            // 记录操作日志
+            operationLogService.log(userId, person.getGenealogyId(), "person", saved.getId(), "create", "创建人物: " + saved.getName(), "");
+
             result.put("code", 0);
             result.put("message", "创建成功");
             result.put("data", saved);
@@ -50,17 +96,40 @@ public class PersonController {
      * 更新人物
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody Person person) {
+    public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody Person person, Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
         try {
+            if (authentication == null || authentication.getPrincipal() == null) {
+                result.put("code", 401);
+                result.put("message", "请先登录");
+                return ResponseEntity.status(401).body(result);
+            }
+            Long userId = (Long) authentication.getPrincipal();
+
             Optional<Person> existing = personService.findById(id);
             if (existing.isEmpty()) {
                 result.put("code", 404);
                 result.put("message", "人物不存在");
                 return ResponseEntity.notFound().build();
             }
+
+            // 权限检查：需要对家谱有编辑权限
+            Long genealogyId = existing.get().getGenealogyId();
+            if (genealogyId != null && !genealogyService.canEdit(genealogyId, userId)) {
+                result.put("code", 403);
+                result.put("message", "无权修改此家谱，请确认你有编辑权限");
+                return ResponseEntity.status(403).body(result);
+            }
+
+            // 修改前创建版本快照
+            personVersionService.createSnapshot(id, userId, "修改人物信息");
+
             person.setId(id);
             Person saved = personService.save(person);
+
+            // 记录操作日志
+            operationLogService.log(userId, genealogyId, "person", id, "update", "修改人物: " + saved.getName(), "");
+
             result.put("code", 0);
             result.put("message", "更新成功");
             result.put("data", saved);
@@ -162,9 +231,34 @@ public class PersonController {
      * 删除人物
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id, Authentication authentication) {
         Map<String, Object> result = new HashMap<>();
         try {
+            if (authentication == null || authentication.getPrincipal() == null) {
+                result.put("code", 401);
+                result.put("message", "请先登录");
+                return ResponseEntity.status(401).body(result);
+            }
+            Long userId = (Long) authentication.getPrincipal();
+
+            Optional<Person> existing = personService.findById(id);
+            if (existing.isEmpty()) {
+                result.put("code", 404);
+                result.put("message", "人物不存在");
+                return ResponseEntity.notFound().build();
+            }
+            Long genealogyId = existing.get().getGenealogyId();
+
+            // 权限检查
+            if (genealogyId != null && !genealogyService.canEdit(genealogyId, userId)) {
+                result.put("code", 403);
+                result.put("message", "无权修改此家谱，请确认你有编辑权限");
+                return ResponseEntity.status(403).body(result);
+            }
+
+            // 记录操作日志
+            operationLogService.log(userId, genealogyId, "person", id, "delete", "删除人物: " + existing.get().getName(), "");
+
             personService.deleteById(id);
             result.put("code", 0);
             result.put("message", "删除成功");

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家族宣传主页 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #fbf7f1 0%, #f4efe6 100%);
+            min-height: 100vh;
+            color: #2f2419;
+        }
+        .banner {
+            background: linear-gradient(135deg, #8a4b24 0%, #b96d3b 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(138, 75, 36, 0.2);
+        }
+        .banner h1 {
+            font-size: clamp(28px, 5vw, 48px);
+            margin-bottom: 10px;
+        }
+        .banner p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: rgba(255, 253, 250, 0.95);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 18px 40px rgba(73, 48, 24, 0.12);
+            margin-bottom: 30px;
+            border: 1px solid rgba(138, 75, 36, 0.12);
+        }
+        .card h2 {
+            color: #8a4b24;
+            margin-bottom: 16px;
+            font-size: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(138, 75, 36, 0.1);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .info-item {
+            background: #fdf8f3;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(138, 75, 36, 0.08);
+        }
+        .info-item label {
+            display: block;
+            font-size: 13px;
+            color: #7a6752;
+            margin-bottom: 6px;
+        }
+        .info-item value {
+            display: block;
+            font-size: 16px;
+            color: #2f2419;
+            font-weight: 500;
+        }
+        .description {
+            line-height: 1.8;
+            color: #554433;
+            font-size: 16px;
+            white-space: pre-line;
+        }
+        .activity-list {
+            display: grid;
+            gap: 16px;
+        }
+        .activity-item {
+            background: #fdf8f3;
+            border: 1px solid rgba(138, 75, 36, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        .activity-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(138, 75, 36, 0.08);
+        }
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .activity-header h3 {
+            font-size: 18px;
+            color: #2f2419;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-planned {
+            background: #e6f2ff;
+            color: #409eff;
+        }
+        .badge-ongoing {
+            background: #f0f9eb;
+            color: #67c23a;
+        }
+        .badge-finished {
+            background: #f4f4f5;
+            color: #909399;
+        }
+        .activity-date {
+            color: #7a6752;
+            font-size: 14px;
+        }
+        .activity-desc {
+            color: #554433;
+            line-height: 1.7;
+            margin-top: 10px;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #7a6752;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #dfd1bc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .page-btn.active {
+            background: #8a4b24;
+            color: white;
+            border-color: #8a4b24;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #fdf8f3;
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(138, 75, 36, 0.08);
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #8a4b24;
+        }
+        .stat-label {
+            color: #7a6752;
+            margin-top: 6px;
+        }
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #7a6752;
+            font-size: 14px;
+        }
+        .back-link {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .back-link a {
+            color: #8a4b24;
+            text-decoration: none;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .photo-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fdf8f3;
+            cursor: pointer;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+        .photo-title {
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #2f2419;
+        }
+        .celebrity-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .celebrity-card {
+            background: #fdf8f3;
+            border: 1px solid #e8d9c8;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .celebrity-photo {
+            height: 200px;
+            overflow: hidden;
+        }
+        .celebrity-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .celebrity-photo-empty {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7a6752;
+            background: #f5f0ea;
+        }
+        .celebrity-info {
+            padding: 16px;
+        }
+        .celebrity-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #8a4b24;
+            margin-bottom: 4px;
+        }
+        .celebrity-title {
+            color: #554433;
+            margin-bottom: 8px;
+        }
+        .celebrity-years {
+            color: #7a6752;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .celebrity-bio {
+            color: #554433;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .message-item {
+            border: 1px solid #e8d9c8;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #fdf8f3;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .message-author {
+            font-weight: 500;
+            color: #8a4b24;
+        }
+        .message-date {
+            color: #7a6752;
+            font-size: 12px;
+        }
+        .message-content {
+            color: #554433;
+            line-height: 1.6;
+        }
+        .btn-submit {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #8a4b24 0%, #b96d3b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .reply-list {
+            margin-left: 30px;
+            margin-top: 10px;
+            border-left: 2px solid #e8d9c8;
+            padding-left: 10px;
+        }
+        .reply-item {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .banner {
+                padding: 40px 16px;
+            }
+            .container {
+                margin: 20px auto;
+                padding: 0 12px;
+            }
+            .card {
+                padding: 18px;
+            }
+            .card h2 {
+                font-size: 20px;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="banner" class="banner">
+        <h1 id="genealogyName">加载中...</h1>
+        <p id="genealogySurname"></p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="stat-people">-</div>
+                    <div class="stat-label">族人数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="stat-generations">-</div>
+                    <div class="stat-label">最大世代</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="stat-activities">-</div>
+                    <div class="stat-label">公开活动</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📜 家族简介</h2>
+            <div id="description" class="description">加载中...</div>
+        </div>
+
+        <div class="card">
+            <h2>🌍 基本信息</h2>
+            <div class="info-grid" id="info-grid">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📅 近期宗亲活动</h2>
+            <div class="activity-list" id="activity-list">
+                <div class="empty">加载中...</div>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <div class="card">
+            <h2>👔 家族名人</h2>
+            <div class="celebrity-list" id="celebrity-list">
+                <div class="empty">加载中...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📷 家族相册</h2>
+            <div class="photo-grid" id="photo-grid">
+                <div class="empty">加载中...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💬 宗亲留言板</h2>
+            <div class="message-form" id="message-form">
+                <input type="text" id="messageAuthor" placeholder="你的姓名" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+                <input type="text" id="messageContact" placeholder="联系方式（可选）" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+                <textarea id="messageContent" placeholder="写下你的留言..." rows="4" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;"></textarea>
+                <button class="btn-submit" onclick="submitMessage()">发布留言</button>
+            </div>
+            <div class="message-list" id="message-list" style="margin-top: 20px;">
+                <div class="empty">加载中...</div>
+            </div>
+            <div class="pagination" id="message-pagination"></div>
+        </div>
+
+        <div class="back-link">
+            <a href="/root-search.html">🔍 寻根请到这里</a>
+        </div>
+
+        <div class="footer">
+            © <span id="year"></span> 家谱管理系统 • 由技术驱动家族文化传承
+        </div>
+    </div>
+
+<script>
+    const genealogyId = new URLSearchParams(window.location.search).get('id');
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    if (!genealogyId) {
+        document.getElementById('genealogyName').textContent = '缺少家谱ID';
+    } else {
+        loadGenealogy();
+        loadActivities(1);
+        loadCelebrities();
+        loadPhotos();
+        loadMessages(1);
+    }
+
+    function loadGenealogy() {
+        fetch(`/api/genealogy/${genealogyId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.code === 0 && data.data) {
+                const g = data.data;
+                document.getElementById('genealogyName').textContent = g.name;
+                document.getElementById('genealogySurname').textContent = g.originPlace ? `祖籍：${g.originPlace}` : '';
+                document.getElementById('description').textContent = g.description || '暂无简介';
+                document.getElementById('stat-people').textContent = g.totalPeople || 0;
+                document.getElementById('stat-generations').textContent = g.maxGeneration || 0;
+
+                const grid = document.getElementById('info-grid');
+                let html = '';
+                html += `<div class="info-item"><label>姓氏</label><value>${g.surname || '-'}</value></div>`;
+                html += `<div class="info-item"><label>起源地</label><value>${g.originPlace || '-'}</value></div>`;
+                grid.innerHTML = html;
+            }
+        });
+    }
+
+    function loadActivities(page) {
+        fetch(`/api/activity/public/${genealogyId}?page=${page}&size=10`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderActivityList(data.data);
+                renderPagination(data.currentPage, data.totalPages);
+                document.getElementById('stat-activities').textContent = data.total;
+            }
+        });
+    }
+
+    function renderActivityList(list) {
+        const container = document.getElementById('activity-list');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">暂无公开活动</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(a => {
+            const badgeClass = {
+                'planned': 'badge-planned',
+                'ongoing': 'badge-ongoing',
+                'finished': 'badge-finished'
+            }[a.status] || 'badge-planned';
+
+            const typeNames = {
+                'meeting': '宗亲联谊会',
+                'ancestor-worship': '祭祖活动',
+                'construction': '祠堂修建',
+                'other': '其他活动'
+            };
+            const typeName = typeNames[a.type] || a.type;
+
+            html += `
+                <div class="activity-item">
+                    <div class="activity-header">
+                        <h3>${a.title}</h3>
+                        <span class="badge ${badgeClass}">${typeName}</span>
+                    </div>
+                    <div class="activity-date">📍 ${a.location || '未设置'} • 📅 ${a.activityDate || '未确定'}</div>
+                    ${a.description ? `<div class="activity-desc">${a.description}</div>` : ''}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderPagination(current, total) {
+        const container = document.getElementById('pagination');
+        if (total <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = '';
+        for (let i = 1; i <= total; i++) {
+            html += `<span class="page-btn ${i === current ? 'active' : ''}" onclick="loadActivities(${i})">${i}</span>`;
+        }
+        container.innerHTML = html;
+    }
+
+    // ========== 家族相册 ==========
+    function loadPhotos() {
+        fetch(`/api/family-photo/public/${genealogyId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderPhotos(data.data);
+            }
+        });
+    }
+
+    function renderPhotos(list) {
+        const container = document.getElementById('photo-grid');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">暂无照片</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(photo => {
+            html += `
+                <div class="photo-item" onclick="openPhoto('${photo.url}')">
+                    <img src="${photo.url}" alt="${photo.title}">
+                    <div class="photo-title">${photo.title}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function openPhoto(url) {
+        window.open(url, '_blank');
+    }
+
+    // ========== 家族名人 ==========
+    function loadCelebrities() {
+        fetch(`/api/family-celebrity/public/${genealogyId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderCelebrities(data.data);
+            }
+        });
+    }
+
+    function renderCelebrities(list) {
+        const container = document.getElementById('celebrity-list');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">暂无家族名人介绍</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(c => {
+            const years = [c.birthYear, c.deathYear].filter(Boolean).join(' - ');
+            html += `
+                <div class="celebrity-card">
+                    <div class="celebrity-photo">
+                        ${c.photoUrl ? `<img src="${c.photoUrl}" alt="${c.name}">` : `<div class="celebrity-photo-empty">暂无照片</div>`}
+                    </div>
+                    <div class="celebrity-info">
+                        <div class="celebrity-name">${c.name} ${c.styleName ? `字${c.styleName}` : ''} ${c.hao ? `号${c.hao}` : ''}</div>
+                        ${c.title ? `<div class="celebrity-title">${c.title}</div>` : ''}
+                        ${years ? `<div class="celebrity-years">${years}</div>` : ''}
+                        ${c.biography ? `<div class="celebrity-bio">${c.biography}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ========== 留言板 ==========
+    function loadMessages(page) {
+        fetch(`/api/family-message/list/${genealogyId}?page=${page}&size=20`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderMessages(data.data);
+                renderMessagePagination(data.currentPage, data.totalPages);
+            }
+        });
+    }
+
+    function renderMessages(list) {
+        const container = document.getElementById('message-list');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">暂无留言，快来抢沙发吧</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(msg => {
+            html += `
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-author">${msg.authorName}</span>
+                        <span class="message-date">${msg.createdAt}</span>
+                    </div>
+                    <div class="message-content">${msg.content}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderMessagePagination(current, total) {
+        const container = document.getElementById('message-pagination');
+        if (total <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = '';
+        for (let i = 1; i <= total; i++) {
+            html += `<span class="page-btn ${i === current ? 'active' : ''}" onclick="loadMessages(${i})">${i}</span>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function submitMessage() {
+        const author = document.getElementById('messageAuthor').value.trim();
+        const contact = document.getElementById('messageContact').value.trim();
+        const content = document.getElementById('messageContent').value.trim();
+        if (!author) {
+            alert('请填写姓名');
+            return;
+        }
+        if (!content) {
+            alert('请填写留言内容');
+            return;
+        }
+        const data = {
+            genealogyId: parseInt(genealogyId),
+            authorName: author,
+            contact: contact,
+            content: content,
+            parentId: 0
+        };
+        fetch('/api/family-message/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                alert('留言发布成功，等待管理员审核后显示');
+                document.getElementById('messageAuthor').value = '';
+                document.getElementById('messageContact').value = '';
+                document.getElementById('messageContent').value = '';
+                loadMessages(1);
+            } else {
+                alert(result.message || '发布失败');
+            }
+        });
+    }
+</script>
+</body>
+</html>

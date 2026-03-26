@@ -2,6 +2,7 @@ package com.genealogy.controller;
 
 import com.genealogy.entity.Genealogy;
 import com.genealogy.service.GenealogyService;
+import com.genealogy.service.MembershipService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,9 @@ public class GenealogyController {
     @Autowired
     private GenealogyService genealogyService;
 
+    @Autowired
+    private MembershipService membershipService;
+
     /**
      * 新增家谱（需要登录）
      */
@@ -36,6 +40,16 @@ public class GenealogyController {
                 return ResponseEntity.status(401).body(result);
             }
             Long userId = (Long) authentication.getPrincipal();
+
+            // 会员额度检查
+            MembershipService.CheckResult check = membershipService.canCreateGenealogy(userId);
+            if (!check.isAllowed()) {
+                result.put("code", 403);
+                result.put("message", check.getMessage());
+                result.put("needUpgrade", true);
+                return ResponseEntity.status(403).body(result);
+            }
+
             genealogy.setUserId(userId);
             Genealogy saved = genealogyService.save(genealogy);
             result.put("code", 0);
@@ -214,6 +228,24 @@ public class GenealogyController {
         Long userId = (Long) authentication.getPrincipal();
         result.put("code", 0);
         result.put("totalGenealogies", genealogyService.countByUserId(userId));
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 获取当前用户可访问的所有家谱（自己创建 + 被邀请）
+     */
+    @GetMapping("/my")
+    public ResponseEntity<Map<String, Object>> getMyGenealogies(Authentication authentication) {
+        Map<String, Object> result = new HashMap<>();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            result.put("code", 401);
+            result.put("message", "请先登录");
+            return ResponseEntity.status(401).body(result);
+        }
+        Long userId = (Long) authentication.getPrincipal();
+        List<Genealogy> genealogies = genealogyService.findAccessibleByUserId(userId);
+        result.put("code", 0);
+        result.put("data", genealogies);
         return ResponseEntity.ok(result);
     }
 }

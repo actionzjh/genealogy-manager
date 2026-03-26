@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寻根匹配 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header h1 {
+            font-size: 24px;
+        }
+        .header p {
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+        .result-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .result-message.success {
+            background: #f0f9eb;
+            border: 1px solid #e1f3d8;
+            color: #67c23a;
+            display: block;
+        }
+        .result-message.error {
+            background: #fef0f0;
+            border: 1px solid #fde2e2;
+            color: #f56c6c;
+            display: block;
+        }
+        .search-list {
+            display: grid;
+            gap: 15px;
+        }
+        .search-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 18px;
+            transition: box-shadow 0.2s;
+        }
+        .search-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .search-item .header {
+            background: none;
+            padding: 0;
+            margin-bottom: 10px;
+        }
+        .search-item h3 {
+            color: #333;
+            font-size: 18px;
+        }
+        .search-item h3 span {
+            font-size: 14px;
+            color: #999;
+            font-weight: normal;
+        }
+        .search-item .info {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .match-score {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        .score-high {
+            background: #f0f9eb;
+            color: #67c23a;
+        }
+        .score-medium {
+            background: #e6f2ff;
+            color: #409eff;
+        }
+        .score-low {
+            background: #fdf6ec;
+            color: #e6a23c;
+        }
+        .match-item {
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 500;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .page-btn {
+            padding: 5px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .footer-link {
+            margin-top: 10px;
+            text-align: right;
+        }
+        .footer-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .container {
+                margin: 15px auto;
+                padding: 0 10px;
+            }
+            .card {
+                padding: 16px;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>🔍 智能寻根匹配</h1>
+            <p>填写已知信息，系统自动帮你匹配可能同宗的家谱，找到失散宗亲</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="result-message" id="resultMessage"></div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="publish" onclick="switchTab('publish')">发布寻根</div>
+            <div class="tab" data-tab="list" onclick="switchTab('list')">公开寻根列表</div>
+            <div class="tab" data-tab="my" onclick="switchTab('my')">我的寻根</div>
+        </div>
+
+        <!-- 发布寻根表单 -->
+        <div class="card" id="tab-publish">
+            <h2>📝 发布寻根启事</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>姓氏 *</label>
+                    <input type="text" id="surname" placeholder="例如：张">
+                </div>
+                <div class="form-group">
+                    <label>始迁祖姓名</label>
+                    <input type="text" id="ancestorName" placeholder="知道的话请填写，方便匹配">
+                </div>
+                <div class="form-group">
+                    <label>祖籍/迁出地</label>
+                    <input type="text" id="originPlace" placeholder="例如：广东省嘉应州长乐县">
+                </div>
+                <div class="form-group">
+                    <label>现居/迁入地</label>
+                    <input type="text" id="currentPlace" placeholder="例如：广西玉林">
+                </div>
+                <div class="form-group">
+                    <label>已知字辈（每个字辈用空格分开）</label>
+                    <input type="text" id="generations" placeholder="例如：德 绍 功 言 福">
+                </div>
+                <div class="form-group">
+                    <label>公开联系方式</label>
+                    <input type="text" id="contact" placeholder="邮箱或微信">
+                </div>
+                <div class="form-group full-width">
+                    <label>详细寻根说明</label>
+                    <textarea id="description" placeholder="说说你还知道哪些信息，比如什么时候迁出，字辈排行..."></textarea>
+                </div>
+                <div class="form-group full-width">
+                    <label>
+                        <input type="checkbox" id="isPublic" checked>
+                        公开此寻根启事，让其他人能看到你
+                    </label>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="publishSearch()">发布并匹配">发布并开始智能匹配</button>
+            </div>
+        </div>
+
+        <!-- 公开寻根列表 -->
+        <div class="card" id="tab-list" style="display: none;">
+            <h2>📋 公开寻根列表</h2>
+            <div id="search-list-container" class="search-list">
+                <div class="empty">加载中...</div>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- 我的寻根 -->
+        <div class="card" id="tab-my" style="display: none;">
+            <h2>👤 我发布的寻根</h2>
+            <div id="my-list-container" class="search-list">
+                <div class="empty">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 匹配结果 -->
+        <div class="card" id="match-result" style="display: none;">
+            <h2>🎯 智能匹配结果</h2>
+            <div id="match-container">
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+<script>
+    const token = localStorage.getItem('token');
+    let currentPage = 1;
+    let totalPages = 1;
+
+    function switchTab(tabName) {
+        // switchTabUI(tabName);
+        if (tabName === 'list') {
+            loadPublicList(1);
+        } else if (tabName === 'my') {
+            loadMyList();
+        }
+    }
+
+    function switchTabUI(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById('tab-publish').style.display = tabName === 'publish' ? 'block' : 'none';
+        document.getElementById('tab-list').style.display = tabName === 'list' ? 'block' : 'none';
+        document.getElementById('tab-my').style.display = tabName === 'my' ? 'block' : 'none';
+    }
+
+    function showMessage(message, isSuccess) {
+        const el = document.getElementById('resultMessage');
+        el.textContent = message;
+        el.className = 'result-message ' + (isSuccess ? 'success' : 'error');
+        setTimeout(() => {
+            setTimeout(() => el.style.display = 'none', 5000);
+        }, 100);
+    }
+
+    function publishSearch() {
+        const data = {
+            surname: document.getElementById('surname').value.trim(),
+            ancestorName: document.getElementById('ancestorName').value.trim() || null,
+            originPlace: document.getElementById('originPlace').value.trim() || null,
+            currentPlace: document.getElementById('currentPlace').value.trim() || null,
+            generations: document.getElementById('generations').value.trim() || null,
+            contact: document.getElementById('contact').value.trim() || null,
+            description: document.getElementById('description').value.trim() || null,
+            isPublic: document.getElementById('isPublic').checked,
+            status: 'open'
+        };
+
+        if (!data.surname) {
+            showMessage('姓氏不能为空', false);
+            return;
+        }
+
+        fetch('/api/root-search', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showMessage('发布成功！正在为你智能匹配...', true);
+                doMatch(data.data.id);
+            } else {
+                showMessage(data.message || '发布失败', false);
+            }
+        })
+        .catch(err => {
+            showMessage('网络错误', false);
+        });
+    }
+
+    function doMatch(searchId) {
+        fetch(`/api/root-search/match/${searchId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderMatchResult(data.data);
+            } else {
+                showMessage(data.message, false);
+            }
+        });
+    }
+
+    function renderMatchResult(matches) {
+        const container = document.getElementById('match-container');
+        document.getElementById('match-result').style.display = 'block';
+        if (matches.length === 0) {
+            container.innerHTML = '<div class="empty">没有找到匹配的家谱，换更多信息可能会找到更多结果</div>';
+            return;
+        }
+        let html = '';
+        matches.forEach(m => {
+            const scoreClass = m.score >= 60 ? 'score-high' : m.score >= 30 ? 'score-medium' : 'score-low';
+            const scoreHtml = `<span class="match-score ${scoreClass}">匹配度 ${m.score.toFixed(1)}</span>`;
+            html += `
+                <div class="match-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>${m.search.surname} ${m.search.ancestorName || ''} ${scoreHtml}</h3>
+                    <div>
+                    </div>
+                </div>
+                <div class="info">
+                    ${m.matchReason}<br>
+                    ${m.search.originPlace ? `<strong>祖籍：</strong>${m.search.originPlace}<br>` : ''}
+                    ${m.search.description ? `<strong>说明：</strong>${m.search.description}` : ''}
+                </div>
+                <div class="footer-link">
+                    <a href="#" onclick="showSearchDetail(${m.search.id})">查看详情 →</a>
+                </div>
+            </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function loadPublicList(page) {
+        currentPage = page;
+        fetch(`/api/root-search/public/list?page=${page}&size=10`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+            renderSearchList(data.data, 'search-list-container');
+            renderPagination(data.currentPage, data.totalPages);
+            totalPages = data.totalPages;
+        });
+    }
+
+    function loadMyList() {
+        fetch('/api/root-search/my', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res =>res.json())
+        .then(data => {
+            if (data.success) {
+                renderSearchList(data.data, 'my-list-container');
+            }
+        });
+    }
+
+    function renderSearchList(list, containerId) {
+        const container = document.getElementById(containerId);
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">暂无寻根启事</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(item => {
+            const statusLabel = item.status === 'open' ? '<span style="color:#67c23a">寻根中</span>' : '<span style="color:#909399">已找到</span>;
+            html += `
+                <div class="search-item">
+                    <div class="header">
+                        <h3>${item.surname} ${item.ancestorName || ''} - ${statusLabel}</h3>
+                    <div class="info">发布时间：${item.createdAt}</div>
+                    </div>
+                    <div class="info">
+                        ${item.originPlace ? `<strong>祖籍：</strong>${item.originPlace}<br>` : ''}
+                        ${item.description ? `<strong>说明：</strong>${item.description.substring(0, 100)}${item.description.length > 100 ? '...' : ''}<br>` : ''}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-secondary btn-sm" onclick="doMatch(${item.id})">重新匹配</button>
+                        ${item.status === 'open' ? `<button class="btn btn-secondary btn-sm" onclick="closeSearch(${item.id}, 'closed')">标记已找到</button>` : `<button class="btn btn-secondary btn-sm" onclick="closeSearch(${item.id}, 'open')">重新开启</button>`}
+                        <button class="btn btn-danger btn-sm" onclick="deleteSearch(${item.id})">删除</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderPagination(current, total) {
+        const container = document.getElementById('pagination');
+        let html = '';
+        for (let i = 1; i <= total; i++) {
+            html += `<span class="page-btn ${i === current ? 'active' : ''}" onclick="loadPublicList(${i})">${i}</span>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function closeSearch(id, status) {
+        fetch(`/api/root-search/${id}/status?status=${status}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('更新成功', true);
+            loadMyList();
+        } else {
+            showMessage(data.message, false);
+        }
+    });
+    }
+
+    function deleteSearch(id) {
+        if (!confirm('确定要删除这个寻根启事吗？')) return;
+        fetch(`/api/root-search/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showMessage('删除成功', true);
+                loadMyList();
+            } else {
+                showMessage(data.message, false);
+            }
+        });
+    }
+
+    function showSearchDetail(id) {
+        // todo: 打开详情页，这里简化直接跳转到匹配
+        doMatch(id);
+    }
+</script>
+</body>
+</html>

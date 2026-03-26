@@ -376,14 +376,25 @@
                 if (data.success) {
                     let msg = `<strong>✅ 导入成功</strong><br>${data.message}`;
                     if (data.errors && data.errors.length > 0) {
-                        msg += '<br><br>警告信息：<ul>';
+                        msg += '<br><br>错误信息：<ul>';
                         data.errors.forEach(err => msg += `<li>${err}</li>`);
+                        msg += '</ul>';
+                    }
+                    if (data.warnings && data.warnings.length > 0) {
+                        msg += '<br><br>⚠️ 数据提示（供您检查）：<ul style="color: #e6a23c;">';
+                        data.warnings.forEach(warn => msg += `<li>${warn}</li>`);
                         msg += '</ul>';
                     }
                     msg += `<br><a href="/">查看家谱列表</a>`;
                     showResult(msg, true);
                 } else {
-                    showResult(`<strong>❌ 导入失败</strong><br>${data.message}`, false);
+                    let msg = `<strong>❌ 导入失败</strong><br>${data.message}`;
+                    if (data.warnings && data.warnings.length > 0) {
+                        msg += '<br><br>⚠️ 提示：<ul>';
+                        data.warnings.forEach(warn => msg += `<li>${warn}</li>`);
+                        msg += '</ul>';
+                    }
+                    showResult(msg, false);
                 }
             })
             .catch(error => {

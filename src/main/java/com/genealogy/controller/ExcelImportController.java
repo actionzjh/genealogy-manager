@@ -73,6 +73,7 @@ public class ExcelImportController {
             result.put("success", false);
             result.put("message", importResult.getErrors().get(0));
             result.put("errors", importResult.getErrors());
+            result.put("warnings", importResult.getWarnings());
             return ResponseEntity.ok(result);
         }
 
@@ -83,6 +84,7 @@ public class ExcelImportController {
         result.put("genealogyCount", importResult.getGenealogyCount());
         result.put("personCount", importResult.getPersonCount());
         result.put("errors", importResult.getErrors());
+        result.put("warnings", importResult.getWarnings());
 
         return ResponseEntity.ok(result);
     }

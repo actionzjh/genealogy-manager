@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字辈查询 - 家谱管理系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        .banner {
+            background: linear-gradient(135deg, #8a4b24 0%, #b96d3b 100%);
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+        .banner h1 {
+            font-size: clamp(28px, 5vw, 42px);
+            margin-bottom: 10px;
+        }
+        .banner p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .card h2 {
+            color: #8a4b24;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .search-box {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .btn-search {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .result-list {
+            display: grid;
+            gap: 15px;
+        }
+        .word-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .word-item h3 {
+            font-size: 18px;
+            color: #8a4b24;
+            margin-bottom: 10px;
+        }
+        .words-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .word-chip {
+            background: #fdf8f3;
+            border: 1px solid #e8d9c8;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 16px;
+        }
+        .word-position {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: end;
+            margin-top: 20px;
+        }
+        .word-position input {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .result-word {
+            font-size: 32px;
+            font-weight: bold;
+            color: #8a4b24;
+            padding: 10px 20px;
+            background: #fdf8f3;
+            border-radius: 8px;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .container {
+                margin: 15px auto;
+                padding: 0 10px;
+            }
+            .card {
+                padding: 16px;
+            }
+            .search-box {
+                grid-template-columns: 1fr;
+            }
+            .word-position {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <h1>👪 字辈查询</h1>
+        <p>输入姓氏，查询字辈排行，方便你确定派行，理清世系</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>🔍 搜索字辈</h2>
+            <div class="search-box">
+                <input type="text" id="surnameInput" placeholder="输入姓氏，例如：张">
+                <button class="btn-search" onclick="search()">搜索</button>
+            </div>
+
+            <div class="word-position">
+                <div>
+                    <label>查询指定排行字辈：第</label>
+                    <input type="number" id="positionInput" min="1" placeholder="N">
+                    <label>代</label>
+                </div>
+                <button class="btn-search" onclick="queryWord()">查询</button>
+            </div>
+            <div id="word-result" style="margin-top: 15px; display: none;">
+                <div>查询结果：</div>
+                <div class="result-word" id="resultWord"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 搜索结果</h2>
+            <div id="result-list" class="result-list">
+                <div class="empty">输入姓氏点击搜索</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+<script>
+    function search() {
+        const surname = document.getElementById('surnameInput').value.trim();
+        if (!surname) {
+            alert('请输入姓氏');
+            return;
+        }
+        fetch(`/api/generation-word/search?surname=${encodeURIComponent(surname)}&page=1&size=20`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderResult(data.data);
+            } else {
+                document.getElementById('result-list').innerHTML = '<div class="empty">没有找到相关字辈</div>';
+            }
+        });
+    }
+
+    function renderResult(list) {
+        const container = document.getElementById('result-list');
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty">没有找到相关字辈，请添加你的字辈到数据库</div>';
+            return;
+        }
+        let html = '';
+        list.forEach(item => {
+            const words = item.words.split(/\s+/);
+            let wordsHtml = '';
+            words.forEach((w, idx) => {
+                wordsHtml += `<span class="word-chip">${idx + 1}: ${w}</span>`;
+            });
+            html += `
+                <div class="word-item">
+                    <h3>${item.surname}${item.branch ? ' - ' + item.branch : ''}</h3>
+                    ${item.originPlace ? `<p style="color:#666; margin-top:8px">祖籍: ${item.originPlace}</p>` : ''}
+                    <div class="words-container">${wordsHtml}</div>
+                    ${item.description ? `<p style="color:#666; margin-top:10px; line-height:1.6">${item.description}</p>` : ''}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function queryWord() {
+        const surname = document.getElementById('surnameInput').value.trim();
+        const position = parseInt(document.getElementById('positionInput').value);
+        if (!surname) {
+            alert('请输入姓氏');
+            return;
+        }
+        if (!position || position < 1) {
+            alert('请输入正确排行');
+            return;
+        }
+        fetch(`/api/generation-word/word?surname=${encodeURIComponent(surname)}&position=${position}`)
+        .then(res => res.json())
+        .then(data => {
+            const resultDiv = document.getElementById('word-result');
+            resultDiv.style.display = 'block';
+            if (data.success && data.word) {
+                document.getElementById('resultWord').textContent = data.word;
+            } else {
+                document.getElementById('resultWord').textContent = '未找到';
+            }
+        });
+    }
+</script>
+</body>
+</html>
