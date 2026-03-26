@@ -151,12 +151,44 @@
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const displayName = document.getElementById('displayName').value;
-            const email = document.getElementById('email').value;
+            const displayName = document.getElementById('displayName').value.trim();
+            const email = document.getElementById('email').value.trim();
             const errorDiv = document.getElementById('errorMessage');
             const successDiv = document.getElementById('successMessage');
+
+            // 前端简单校验
+            if (!username) {
+                errorDiv.textContent = '用户名不能为空';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+            if (username.length < 2 || username.length > 30) {
+                errorDiv.textContent = '用户名长度必须在2-30个字符之间';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+            if (!password) {
+                errorDiv.textContent = '密码不能为空';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+            if (password.length < 6 || password.length > 50) {
+                errorDiv.textContent = '密码长度必须在6-50个字符之间';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorDiv.textContent = '邮箱格式不正确';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
 
             try {
                 const response = await fetch('/api/auth/register', {
@@ -167,7 +199,7 @@
                     body: JSON.stringify({ username, password, email, displayName })
                 });
 
-                const data = await response.json();
+                const text = await response.text();
 
                 if (response.ok) {
                     successDiv.textContent = '注册成功！即将跳转到登录页...';
@@ -177,13 +209,20 @@
                         window.location.href = 'login.html';
                     }, 1500);
                 } else {
-                    errorDiv.textContent = data;
+                    // 尝试解析为 JSON，如果失败则直接显示原文
+                    let msg = text;
+                    try {
+                        const data = JSON.parse(text);
+                        msg = (typeof data === 'object' && data !== null && data.message) ? data.message : text;
+                    } catch (_) { /* 已是纯文本 */ }
+                    errorDiv.textContent = msg;
                     errorDiv.style.display = 'block';
                     successDiv.style.display = 'none';
                 }
             } catch (error) {
                 errorDiv.textContent = '网络错误，请重试';
                 errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
             }
         });
     </script>

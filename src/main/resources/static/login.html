@@ -129,9 +129,21 @@
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('errorMessage');
+
+            // 前端校验
+            if (!username) {
+                errorDiv.textContent = '用户名不能为空';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!password) {
+                errorDiv.textContent = '密码不能为空';
+                errorDiv.style.display = 'block';
+                return;
+            }
 
             try {
                 const response = await fetch('/api/auth/login', {
@@ -142,9 +154,10 @@
                     body: JSON.stringify({ username, password })
                 });
 
-                const data = await response.json();
+                const text = await response.text();
 
                 if (response.ok) {
+                    const data = JSON.parse(text);
                     // 保存token到localStorage
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userId', data.userId);
@@ -154,7 +167,12 @@
                     // 跳转到家谱列表页
                     window.location.href = 'genealogy-list.html';
                 } else {
-                    errorDiv.textContent = data;
+                    let msg = text;
+                    try {
+                        const data = JSON.parse(text);
+                        msg = (typeof data === 'object' && data !== null && data.message) ? data.message : text;
+                    } catch (_) { /* 已是纯文本 */ }
+                    errorDiv.textContent = msg;
                     errorDiv.style.display = 'block';
                 }
             } catch (error) {
