@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fractal Tree — Branches Only</title>
+    <title>支系层级可视化 - 家谱管理系统</title>
     <script src="d3.min.js"></script>
     <style>
         * {
@@ -587,1442 +586,1009 @@
         details[open]>summary .toggle-arrow {
             transform: rotate(90deg);
         }
+
+        /* Genealogy Selector */
+        .selector-group {
+            margin-bottom: 16px;
+        }
+
+        .selector-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .selector-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .selector-group button {
+            width: 100%;
+            padding: 8px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .selector-group button:hover {
+            background: var(--accent-hover);
+        }
+
+        .person-info {
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .person-info h4 {
+            font-size: 12px;
+            color: var(--accent-color);
+            margin-bottom: 6px;
+        }
+
+        .person-info p {
+            font-size: 11px;
+            margin: 2px 0;
+        }
+
+        .generation-stats {
+            margin-top: 10px;
+        }
+
+        .generation-stats .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            padding: 2px 0;
+        }
     </style>
 </head>
-
 <body>
-    <!-- Theme Toggle Button -->
-    <button id="theme-toggle" aria-label="Toggle theme">
-        <div class="toggle-icon icon-sun">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 2v2"></path>
-                <path d="M12 20v2"></path>
-                <path d="m4.93 4.93 1.41 1.41"></path>
-                <path d="m17.66 17.66 1.41 1.41"></path>
-                <path d="M2 12h2"></path>
-                <path d="M20 12h2"></path>
-                <path d="m6.34 17.66-1.41 1.41"></path>
-                <path d="m19.07 4.93-1.41 1.41"></path>
-            </svg>
-        </div>
-        <div class="toggle-icon icon-moon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-            </svg>
-        </div>
-    </button>
+<button id="theme-toggle" aria-label="Toggle theme">
+    <div class="toggle-icon icon-sun">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+        </svg>
+    </div>
+    <div class="toggle-icon icon-moon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+    </div>
+</button>
 
-    <div id="container">
-        <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-        <div id="sidebar">
-            <div id="tab-bar">
-                <button class="tab-btn active" onclick="showTab('params')">⚙️ Parameters</button>
-                <button class="tab-btn" onclick="showTab('info')">📋 Details</button>
+<div id="container">
+    <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <div id="sidebar">
+        <div id="tab-bar">
+            <button class="tab-btn active" onclick="showTab('select')">📁 选择家谱</button>
+            <button class="tab-btn" onclick="showTab('params')">⚙️ 参数</button>
+            <button class="tab-btn" onclick="showTab('info')">📋 详情</button>
+        </div>
+
+        <div id="tab-select" class="tab-content active">
+            <div class="selector-group">
+                <label>选择家谱：</label>
+                <select id="genealogy-select">
+                    <option value="">-- 请选择 --</option>
+                </select>
+                <button onclick="loadGenealogyData()">加载数据</button>
             </div>
 
-            <div id="tab-params" class="tab-content active">
-                <div class="param-group">
-                    <h3>🌿 Trunk</h3>
-                    <div class="param-row">
-                        <label>Spacing</label>
-                        <input type="range" id="p-trunkSpacing" min="60" max="500" value="200" step="10">
-                        <span class="param-val" id="v-trunkSpacing">200</span>
-                    </div>
-                    <p class="param-desc">Vertical gap between branch attachment points.</p>
-                    <div class="param-row">
-                        <label>Stroke</label>
-                        <input type="range" id="p-trunkStroke" min="4" max="30" value="14" step="1">
-                        <span class="param-val" id="v-trunkStroke">14</span>
-                    </div>
-                </div>
-
-                <div class="param-group">
-                    <h3>Level 1 — Domain Branches</h3>
-                    <div class="param-row">
-                        <label>Length</label>
-                        <input type="range" id="p-L1len" min="50" max="500" value="200" step="10">
-                        <span class="param-val" id="v-L1len">200</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Angle (°)</label>
-                        <input type="range" id="p-L1angle" min="10" max="85" value="50" step="1">
-                        <span class="param-val" id="v-L1angle">50</span>
-                    </div>
-                    <p class="param-desc">Angle from vertical. 0° = up, 90° = horizontal.</p>
-                    <div class="param-row">
-                        <label>Stroke</label>
-                        <input type="range" id="p-L1stroke" min="2" max="20" value="8" step="0.5">
-                        <span class="param-val" id="v-L1stroke">8</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout Start</label>
-                        <input type="range" id="p-L1start" min="0" max="0.5" value="0.2" step="0.05">
-                        <span class="param-val" id="v-L1start">0.2</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout End</label>
-                        <input type="range" id="p-L1end" min="0.5" max="1" value="0.9" step="0.05">
-                        <span class="param-val" id="v-L1end">0.9</span>
-                    </div>
-                </div>
-
-                <div class="param-group">
-                    <h3>Level 2 — KEP Branches</h3>
-                    <div class="param-row">
-                        <label>Length</label>
-                        <input type="range" id="p-L2len" min="20" max="300" value="110" step="5">
-                        <span class="param-val" id="v-L2len">110</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Angle (°)</label>
-                        <input type="range" id="p-L2angle" min="10" max="120" value="45" step="1">
-                        <span class="param-val" id="v-L2angle">45</span>
-                    </div>
-                    <p class="param-desc">Angle relative to the parent branch.</p>
-                    <div class="param-row">
-                        <label>Stroke</label>
-                        <input type="range" id="p-L2stroke" min="1" max="12" value="4" step="0.5">
-                        <span class="param-val" id="v-L2stroke">4</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout Start</label>
-                        <input type="range" id="p-L2start" min="0" max="0.5" value="0.3" step="0.05">
-                        <span class="param-val" id="v-L2start">0.3</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout End</label>
-                        <input type="range" id="p-L2end" min="0.5" max="1" value="0.95" step="0.05">
-                        <span class="param-val" id="v-L2end">0.95</span>
-                    </div>
-                </div>
-
-                <div class="param-group">
-                    <h3>Level 3 — Section Twigs</h3>
-                    <div class="param-row">
-                        <label>Length</label>
-                        <input type="range" id="p-L3len" min="10" max="200" value="55" step="5">
-                        <span class="param-val" id="v-L3len">55</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Angle (°)</label>
-                        <input type="range" id="p-L3angle" min="10" max="120" value="40" step="1">
-                        <span class="param-val" id="v-L3angle">40</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Stroke</label>
-                        <input type="range" id="p-L3stroke" min="0.5" max="6" value="2" step="0.5">
-                        <span class="param-val" id="v-L3stroke">2</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout Start</label>
-                        <input type="range" id="p-L3start" min="0" max="0.5" value="0.3" step="0.05">
-                        <span class="param-val" id="v-L3start">0.3</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout End</label>
-                        <input type="range" id="p-L3end" min="0.5" max="1" value="0.95" step="0.05">
-                        <span class="param-val" id="v-L3end">0.95</span>
-                    </div>
-                </div>
-
-                <div class="param-group">
-                    <h3>Level 4+ — Leaf Twigs</h3>
-                    <div class="param-row">
-                        <label>Length</label>
-                        <input type="range" id="p-L4len" min="5" max="120" value="28" step="2">
-                        <span class="param-val" id="v-L4len">28</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Angle (°)</label>
-                        <input type="range" id="p-L4angle" min="10" max="120" value="35" step="1">
-                        <span class="param-val" id="v-L4angle">35</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Stroke</label>
-                        <input type="range" id="p-L4stroke" min="0.2" max="4" value="0.8" step="0.2">
-                        <span class="param-val" id="v-L4stroke">0.8</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout Start</label>
-                        <input type="range" id="p-L4start" min="0" max="0.5" value="0.3" step="0.05">
-                        <span class="param-val" id="v-L4start">0.3</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Sprout End</label>
-                        <input type="range" id="p-L4end" min="0.5" max="1" value="0.95" step="0.05">
-                        <span class="param-val" id="v-L4end">0.95</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Depth shrink</label>
-                        <input type="range" id="p-depthShrink" min="0.3" max="0.95" value="0.6" step="0.05">
-                        <span class="param-val" id="v-depthShrink">0.6</span>
-                    </div>
-                    <p class="param-desc">Each level beyond 4 multiplied by this factor.</p>
-                </div>
-
-                <div class="param-group">
-                    <h3>📐 Layout</h3>
-                    <div class="param-row">
-                        <label>Twig Spacing</label>
-                        <input type="range" id="p-twigSpacing" min="5" max="100" value="25" step="1">
-                        <span class="param-val" id="v-twigSpacing">25</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Min Sprout ∠</label>
-                        <input type="range" id="p-minSproutAngle" min="5" max="60" value="25" step="1">
-                        <span class="param-val" id="v-minSproutAngle">25</span>
-                    </div>
-                    <div class="param-row">
-                        <label>Jitter</label>
-                        <input type="range" id="p-jitter" min="0" max="60" value="18" step="1">
-                        <span class="param-val" id="v-jitter">18</span>
-                    </div>
-                    <p class="param-desc">Random vertical offset per domain branch.</p>
-                    <div class="param-row">
-                        <label>Collapse depth</label>
-                        <input type="range" id="p-collapseDepth" min="1" max="5" value="2" step="1">
-                        <span class="param-val" id="v-collapseDepth">2</span>
-                    </div>
-                </div>
-
-                <button id="reset-params" onclick="resetParams()">↺ Reset to Defaults</button>
+            <div class="selector-group">
+                <label>起始人物：</label>
+                <select id="root-person-select">
+                    <option value="">-- 先选择家谱 --</option>
+                </select>
             </div>
 
-            <div id="tab-info" class="tab-content">
-                <div id="details">
-                    <p><strong>Kubernetes Architecture Tree</strong></p>
-                    <p>Every line IS a requirement or domain. No nodes — just trunk, branches, and twigs. Thicker =
-                        higher in the hierarchy.</p>
-                    <p><em>Click the tip of any branch to expand/collapse. Hover to see what it represents.</em></p>
-                    <div class="legend">
-                        <div class="legend-item">
-                            <div class="legend-line" style="width:40px;background:#2a4a2a;height:8px;"></div> Trunk
-                            (Architecture Core)
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-line" style="width:40px;background:#58a6ff;height:5px;"></div> Branch
-                            (Functional Domain)
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-line" style="width:40px;background:#f0883e;height:3px;"></div> Branch
-                            (KEP / PRD)
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-line" style="width:40px;background:#bc8cff;height:2px;"></div> Twig
-                            (Section)
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-line" style="width:40px;background:#f778ba;height:1px;"></div> Twig (Leaf
-                            Requirement)
-                        </div>
-                    </div>
-                </div>
+            <div id="current-info" class="person-info" style="display:none;">
+                <h4>当前信息</h4>
+                <p><strong>家谱：</strong> <span id="current-genealogy-name">-</span></p>
+                <p><strong>始祖：</strong> <span id="current-root-name">-</span></p>
+                <p><strong>总人数：</strong> <span id="total-people">-</span></p>
+            </div>
+
+            <div id="generation-stats" class="generation-stats">
             </div>
         </div>
 
-        <div id="graph">
-            <div id="tooltip"></div>
-
-            <div id="list-view"></div>
-
-            <div id="force-directed-view"></div>
-
-            <div id="radial-cluster-view"></div>
-
-            <div id="controls">
-                <div class="button-bar" style="padding-right: 40px;">
-                    <select id="view-select" onchange="setView(this.value)">
-                        <!-- <option value="fractal">Fractal Tree</option> -->
-                        <option value="list" selected>Notion List</option>
-                        <option value="force">Force-directed</option>
-                        <option value="radial">Radial Cluster</option>
-                    </select>
-                    <button onclick="collapseAll()">Collapse All</button>
-                    <button onclick="expandToLevel(1)">L1</button>
-                    <button onclick="expandToLevel(2)">L2</button>
-                    <button onclick="expandToLevel(3)">L3</button>
-                    <button onclick="expandAll()">Expand All</button>
+        <div id="tab-params" class="tab-content">
+            <div class="param-group">
+                <h3>🌿 主干</h3>
+                <div class="param-row">
+                    <label>间距</label>
+                    <input type="range" id="p-trunkSpacing" min="60" max="500" value="200" step="10">
+                    <span class="param-val" id="v-trunkSpacing">200</span>
                 </div>
-
-                <div id="status-hud">
-                    <span id="poll-status"
-                        style="font-size:10px; color:#666666; margin-right:8px;">Watching...</span>
-                    <div class="hud-item" onclick="toggleFilter('todo')" id="hud-todo">
-                        <div class="hud-dot" style="background:#8b949e;"></div><span>Todo</span><span class="hud-val"
-                            id="count-todo">0</span>
-                    </div>
-                    <div class="hud-item" onclick="toggleFilter('processing')" id="hud-processing">
-                        <div class="hud-dot" style="background:#e3b341;"></div><span>Proc</span><span class="hud-val"
-                            id="count-processing">0</span>
-                    </div>
-                    <div class="hud-item" onclick="toggleFilter('problem')" id="hud-problem">
-                        <div class="hud-dot" style="background:#ffa657;"></div><span>Prob</span><span class="hud-val"
-                            id="count-problem">0</span>
-                    </div>
-                    <div class="hud-item" onclick="toggleFilter('done')" id="hud-done">
-                        <div class="hud-dot" style="background:#238636;"></div><span>Done</span><span class="hud-val"
-                            id="count-done">0</span>
-                    </div>
-                    <div class="hud-item" style="margin-left:12px; opacity:0.6; cursor:default;">
-                        <span class="hud-val" id="count-total">0</span><span> visible</span>
-                    </div>
+                <p class="param-desc">分支附着点之间的垂直间距。</p>
+                <div class="param-row">
+                    <label>线条粗细</label>
+                    <input type="range" id="p-trunkStroke" min="4" max="30" value="14" step="1">
+                    <span class="param-val" id="v-trunkStroke">14</span>
                 </div>
+            </div>
+
+            <div class="param-group">
+                <h3>第一级 - 大宗支</h3>
+                <div class="param-row">
+                    <label>长度</label>
+                    <input type="range" id="p-L1len" min="50" max="500" value="200" step="10">
+                    <span class="param-val" id="v-L1len">200</span>
+                </div>
+                <div class="param-row">
+                    <label>角度 (°)</label>
+                    <input type="range" id="p-L1angle" min="10" max="85" value="50" step="1">
+                    <span class="param-val" id="v-L1angle">50</span>
+                </div>
+                <p class="param-desc">与垂直线的夹角。0° = 向上，90° = 水平。</p>
+                <div class="param-row">
+                    <label>线条粗细</label>
+                    <input type="range" id="p-L1stroke" min="2" max="20" value="8" step="0.5">
+                    <span class="param-val" id="v-L1stroke">8</span>
+                </div>
+                <div class="param-row">
+                    <label>分支起点</label>
+                    <input type="range" id="p-L1start" min="0" max="0.5" value="0.2" step="0.05">
+                    <span class="param-val" id="v-L1start">0.2</span>
+                </div>
+                <div class="param-row">
+                    <label>分支终点</label>
+                    <input type="range" id="p-L1end" min="0.5" max="1" value="0.9" step="0.05">
+                    <span class="param-val" id="v-L1end">0.9</span>
+                </div>
+            </div>
+
+            <div class="param-group">
+                <h3>第二级 - 小宗支</h3>
+                <div class="param-row">
+                    <label>长度</label>
+                    <input type="range" id="p-L2len" min="20" max="300" value="110" step="5">
+                    <span class="param-val" id="v-L2len">110</span>
+                </div>
+                <div class="param-row">
+                    <label>角度 (°)</label>
+                    <input type="range" id="p-L2angle" min="10" max="120" value="45" step="1">
+                    <span class="param-val" id="v-L2angle">45</span>
+                </div>
+                <p class="param-desc">相对于父分支的角度。</p>
+                <div class="param-row">
+                    <label>线条粗细</label>
+                    <input type="range" id="p-L2stroke" min="1" max="12" value="4" step="0.5">
+                    <span class="param-val" id="v-L2stroke">4</span>
+                </div>
+                <div class="param-row">
+                    <label>分支起点</label>
+                    <input type="range" id="p-L2start" min="0" max="0.5" value="0.3" step="0.05">
+                    <span class="param-val" id="v-L2start">0.3</span>
+                </div>
+                <div class="param-row">
+                    <label>分支终点</label>
+                    <input type="range" id="p-L2end" min="0.5" max="1" value="0.95" step="0.05">
+                    <span class="param-val" id="v-L2end">0.95</span>
+                </div>
+            </div>
+
+            <div class="param-group">
+                <h3>第三级 - 房支</h3>
+                <div class="param-row">
+                    <label>长度</label>
+                    <input type="range" id="p-L3len" min="10" max="200" value="55" step="5">
+                    <span class="param-val" id="v-L3len">55</span>
+                </div>
+                <div class="param-row">
+                    <label>角度 (°)</label>
+                    <input type="range" id="p-L3angle" min="10" max="120" value="40" step="1">
+                    <span class="param-val" id="v-L3angle">40</span>
+                </div>
+                <div class="param-row">
+                    <label>线条粗细</label>
+                    <input type="range" id="p-L3stroke" min="0.5" max="6" value="2" step="0.5">
+                    <span class="param-val" id="v-L3stroke">2</span>
+                </div>
+                <div class="param-row">
+                    <label>分支起点</label>
+                    <input type="range" id="p-L3start" min="0" max="0.5" value="0.3" step="0.05">
+                    <span class="param-val" id="v-L3start">0.3</span>
+                </div>
+                <div class="param-row">
+                    <label>分支终点</label>
+                    <input type="range" id="p-L3end" min="0.5" max="1" value="0.95" step="0.05">
+                    <span class="param-val" id="v-L3end">0.95</span>
+                </div>
+            </div>
+
+            <div class="param-group">
+                <h3>第四级+ - 后裔</h3>
+                <div class="param-row">
+                    <label>长度</label>
+                    <input type="range" id="p-L4len" min="5" max="120" value="28" step="2">
+                    <span class="param-val" id="v-L4len">28</span>
+                </div>
+                <div class="param-row">
+                    <label>角度 (°)</label>
+                    <input type="range" id="p-L4angle" min="10" max="120" value="35" step="1">
+                    <span class="param-val" id="v-L4angle">35</span>
+                </div>
+                <div class="param-row">
+                    <label>线条粗细</label>
+                    <input type="range" id="p-L4stroke" min="0.2" max="4" value="0.8" step="0.2">
+                    <span class="param-val" id="v-L4stroke">0.8</span>
+                </div>
+                <div class="param-row">
+                    <label>深度收缩</label>
+                    <input type="range" id="p-depthShrink" min="0.3" max="0.95" value="0.6" step="0.05">
+                    <span class="param-val" id="v-depthShrink">0.6</span>
+                </div>
+                <p class="param-desc">超过4级后每级长度乘以这个系数。</p>
+            </div>
+
+            <div class="param-group">
+                <h3>📐 布局</h3>
+                <div class="param-row">
+                    <label>小枝间距</label>
+                    <input type="range" id="p-twigSpacing" min="5" max="100" value="25" step="1">
+                    <span class="param-val" id="v-twigSpacing">25</span>
+                </div>
+                <div class="param-row">
+                    <label>最小分枝角度</label>
+                    <input type="range" id="p-minSproutAngle" min="5" max="60" value="25" step="1">
+                    <span class="param-val" id="v-minSproutAngle">25</span>
+                </div>
+                <div class="param-row">
+                    <label>随机抖动</label>
+                    <input type="range" id="p-jitter" min="0" max="60" value="18" step="1">
+                    <span class="param-val" id="v-jitter">18</span>
+                </div>
+                <p class="param-desc">大宗分支的随机垂直偏移。</p>
+                <div class="param-row">
+                    <label>默认折叠深度</label>
+                    <input type="range" id="p-collapseDepth" min="1" max="6" value="3" step="1">
+                    <span class="param-val" id="v-collapseDepth">3</span>
+                </div>
+            </div>
+
+            <button id="reset-params" onclick="resetParams()">↺ 恢复默认设置</button>
+        </div>
+
+        <div id="tab-info" class="tab-content">
+            <div id="details">
+                <p><strong>家谱支系层级可视化</strong></p>
+                <p>将家谱世系以树形分支的形式直观展示，支持多种可视化模式：</p>
+                <ul style="margin: 10px 0; padding-left: 20px; font-size: 12px; color: #666;">
+                    <li>🌳 分形树状图 - 像大树一样展示宗族分支</li>
+                    <li>📋 Notion 风格可折叠列表 - 文字层级浏览</li>
+                    <li>🔗 力导向关系图 - 交互式拖拽布局</li>
+                    <li>🌟 辐射簇状图 - 环形辐射展示</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>操作说明：</strong></p>
+                <ol style="margin: 10px 0; padding-left: 20px; font-size: 12px; color: #666;">
+                    <li>先选择你要查看的家谱</li>
+                    <li>选择起始人物（默认选择家谱始祖）</li>
+                    <li>点击加载数据，等待树形生成</li>
+                    <li>切换不同的视图模式体验不同展示效果</li>
+                    <li>可在参数面板调整树形布局参数</li>
+                </ol>
             </div>
         </div>
     </div>
 
-    <script>
-        // Theme toggle
-        const themeToggle = document.getElementById('theme-toggle');
+    <div id="controls">
+        <div class="button-bar">
+            <select id="view-select" onchange="switchView(this.value)">
+                <option value="tree">🌳 分形树状图</option>
+                <option value="list">📋 文字列表</option>
+                <option value="force">🔗 力导向图</option>
+                <option value="radial">🌟 辐射簇状</option>
+            </select>
+            <button onclick="resetZoom()">🔍 重置缩放</button>
+        </div>
+        <div id="status-hud">
+            <div class="hud-item" id="hud-total">
+                <span class="hud-dot" style="background: #0066cc;"></span>
+                总人数: <span class="hud-val" id="hud-total-val">0</span>
+            </div>
+            <div class="hud-item" id="hud-depth">
+                <span class="hud-dot" style="background: #28a745;"></span>
+                深度: <span class="hud-val" id="hud-depth-val">0</span>
+            </div>
+        </div>
+    </div>
 
-        // Check localStorage for saved theme preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark');
-            themeToggle.classList.add('active');
+    <div id="graph">
+        <div id="tooltip"></div>
+    </div>
+
+    <div id="list-view"></div>
+    <div id="force-directed-view"></div>
+    <div id="radial-cluster-view"></div>
+</div>
+
+<script>
+// Global variables
+let currentData = null;
+let currentView = 'tree';
+let svg = null;
+let g = null;
+let zoom = null;
+let currentGenealogyId = null;
+
+// Theme toggle
+document.getElementById('theme-toggle').addEventListener('click', function() {
+    document.body.classList.toggle('dark');
+    this.classList.toggle('active');
+});
+
+// Sidebar toggle
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+// Show tab
+function showTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.tab-btn[onclick="showTab('${tab}')"]`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// Parameter binding
+document.querySelectorAll('input[type="range"]').forEach(input => {
+    input.addEventListener('input', function() {
+        document.getElementById('v-' + this.id.substring(2)).textContent = this.value;
+        if (currentData) {
+            renderTree();
         }
+    });
+});
 
-        themeToggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark');
-            this.classList.toggle('active');
+// Reset parameters
+function resetParams() {
+    const defaults = {
+        'p-trunkSpacing': 200,
+        'p-trunkStroke': 14,
+        'p-L1len': 200,
+        'p-L1angle': 50,
+        'p-L1stroke': 8,
+        'p-L1start': 0.2,
+        'p-L1end': 0.9,
+        'p-L2len': 110,
+        'p-L2angle': 45,
+        'p-L2stroke': 4,
+        'p-L2start': 0.3,
+        'p-L2end': 0.95,
+        'p-L3len': 55,
+        'p-L3angle': 40,
+        'p-L3stroke': 2,
+        'p-L3start': 0.3,
+        'p-L3end': 0.95,
+        'p-L4len': 28,
+        'p-L4angle': 35,
+        'p-L4stroke': 0.8,
+        'p-depthShrink': 0.6,
+        'p-twigSpacing': 25,
+        'p-minSproutAngle': 25,
+        'p-jitter': 18,
+        'p-collapseDepth': 3
+    };
+    Object.keys(defaults).forEach(key => {
+        document.getElementById(key).value = defaults[key];
+        document.getElementById('v-' + key.substring(2)).textContent = defaults[key];
+    });
+    if (currentData) {
+        renderTree();
+    }
+}
 
-            // Save preference to localStorage
-            const isDark = document.body.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+// Get current parameters
+function getParams() {
+    return {
+        trunkSpacing: +document.getElementById('p-trunkSpacing').value,
+        trunkStroke: +document.getElementById('p-trunkStroke').value,
+        L1len: +document.getElementById('p-L1len').value,
+        L1angle: +document.getElementById('p-L1angle').value * Math.PI / 180,
+        L1stroke: +document.getElementById('p-L1stroke').value,
+        L1start: +document.getElementById('p-L1start').value,
+        L1end: +document.getElementById('p-L1end').value,
+        L2len: +document.getElementById('p-L2len').value,
+        L2angle: +document.getElementById('p-L2angle').value * Math.PI / 180,
+        L2stroke: +document.getElementById('p-L2stroke').value,
+        L2start: +document.getElementById('p-L2start').value,
+        L2end: +document.getElementById('p-L2end').value,
+        L3len: +document.getElementById('p-L3len').value,
+        L3angle: +document.getElementById('p-L3angle').value * Math.PI / 180,
+        L3stroke: +document.getElementById('p-L3stroke').value,
+        L3start: +document.getElementById('p-L3start').value,
+        L3end: +document.getElementById('p-L3end').value,
+        L4len: +document.getElementById('p-L4len').value,
+        L4angle: +document.getElementById('p-L4angle').value * Math.PI / 180,
+        L4stroke: +document.getElementById('p-L4stroke').value,
+        depthShrink: +document.getElementById('p-depthShrink').value,
+        twigSpacing: +document.getElementById('p-twigSpacing').value,
+        minSproutAngle: +document.getElementById('p-minSproutAngle').value * Math.PI / 180,
+        jitter: +document.getElementById('p-jitter').value,
+        collapseDepth: +document.getElementById('p-collapseDepth').value
+    };
+}
+
+// Load genealogy list on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadGenealogyList();
+});
+
+// Load genealogy list from API
+function loadGenealogyList() {
+    fetch('/api/genealogy/list')
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('genealogy-select');
+            data.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = g.name;
+                select.appendChild(opt);
+            });
+        })
+        .catch(err => {
+            console.error('Failed to load genealogy list', err);
+        });
+}
+
+// When genealogy is selected, load root persons
+document.getElementById('genealogy-select').addEventListener('change', function() {
+    const genealogyId = this.value;
+    if (!genealogyId) return;
+    currentGenealogyId = genealogyId;
+    fetch(`/api/person/roots?genealogyId=${genealogyId}`)
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('root-person-select');
+            select.innerHTML = '<option value="">-- 选择起始人物 --</option>';
+            data.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                select.appendChild(opt);
+            });
+        });
+});
+
+// Load genealogy data
+function loadGenealogyData() {
+    const genealogyId = document.getElementById('genealogy-select').value;
+    let personId = document.getElementById('root-person-select').value;
+
+    if (!genealogyId) {
+        alert('请先选择家谱');
+        return;
+    }
+
+    // If no person selected, use first root
+    if (!personId) {
+        personId = document.querySelector('#root-person-select option:nth-child(2)')?.value;
+    }
+
+    fetch(`/api/hierarchy/branch-data?genealogyId=${genealogyId}&rootPersonId=${personId}`)
+        .then(res => res.json())
+        .then(data => {
+            currentData = data;
+            updateStats(data);
+            renderTree();
+        })
+        .catch(err => {
+            console.error('Failed to load hierarchy data', err);
+            alert('加载数据失败');
+        });
+}
+
+function updateStats(data) {
+    // Count total nodes
+    let count = 0;
+    let maxDepth = 0;
+    const genStats = {};
+
+    function countNodes(node, depth) {
+        count++;
+        if (depth > maxDepth) maxDepth = depth;
+        genStats[depth] = (genStats[depth] || 0) + 1;
+        if (node.children && node.children.length) {
+            node.children.forEach(c => countNodes(c, depth + 1));
+        }
+    }
+
+    countNodes(data, 1);
+
+    document.getElementById('total-people').textContent = count;
+    document.getElementById('hud-total-val').textContent = count;
+    document.getElementById('hud-depth-val').textContent = maxDepth;
+
+    // Update generation stats in sidebar
+    const container = document.getElementById('generation-stats');
+    container.innerHTML = '<h4 style="font-size: 12px; color: #0066cc; margin-bottom: 8px;">代数分布</h4>';
+    Object.keys(genStats).sort((a, b) => a - b).forEach(gen => {
+        const row = document.createElement('div');
+        row.className = 'stat-row';
+        row.innerHTML = `<span>第 ${gen} 代</span><span>${genStats[gen]} 人</span>`;
+        container.appendChild(row);
+    });
+
+    // Update current info
+    const genealogyName = document.getElementById('genealogy-select').options[document.getElementById('genealogy-select').selectedIndex].text;
+    let rootName = '-';
+    if (personId) {
+        rootName = document.getElementById('root-person-select').options[document.getElementById('root-person-select').selectedIndex].text;
+    }
+    document.getElementById('current-genealogy-name').textContent = genealogyName;
+    document.getElementById('current-root-name').textContent = rootName;
+    document.getElementById('current-info').style.display = 'block';
+}
+
+// Switch view mode
+function switchView(view) {
+    currentView = view;
+    // Hide all views
+    document.getElementById('graph').style.display = view === 'tree' ? 'block' : 'none';
+    document.getElementById('list-view').style.display = view === 'list' ? 'block' : 'none';
+    document.getElementById('force-directed-view').style.display = view === 'force' ? 'block' : 'none';
+    document.getElementById('radial-cluster-view').style.display = view === 'radial' ? 'block' : 'none';
+
+    if (currentData) {
+        renderTree();
+    }
+}
+
+// Reset zoom
+function resetZoom() {
+    if (zoom && svg) {
+        zoom.translateTo(svg, 0, 0);
+        zoom.scaleTo(svg, 1);
+    }
+}
+
+// Main render function
+function renderTree() {
+    // Clear previous content
+    document.getElementById('graph').innerHTML = '<div id="tooltip"></div>';
+    document.getElementById('list-view').innerHTML = '';
+    document.getElementById('force-directed-view').innerHTML = '';
+    document.getElementById('radial-cluster-view').innerHTML = '';
+
+    if (!currentData) return;
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    switch (currentView) {
+        case 'tree':
+            renderFractalTree(width, height);
+            break;
+        case 'list':
+            renderNotionList();
+            break;
+        case 'force':
+            renderForceDirected(width, height);
+            break;
+        case 'radial':
+            renderRadialCluster(width, height);
+            break;
+    }
+}
+
+// Render fractal tree (main view)
+function renderFractalTree(width, height) {
+    const container = d3.select('#graph');
+    svg = container.append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    // Add zoom behavior
+    zoom = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+            g.attr('transform', event.transform);
         });
 
-        const DEPTH_COLORS = [
-            "#2a4a2a",   // 0: trunk (drawn separately)
-            "#58a6ff",   // 1: domain branches
-            "#f0883e",   // 2: KEP branches
-            "#bc8cff",   // 3: section twigs
-            "#f778ba",   // 4+: leaf twigs
-        ];
+    svg.call(zoom);
+    g = svg.append('g');
 
-        const STATUS_COLORS = {
-            todo: "#8b949e",       // Gray
-            processing: "#e3b341", // Light Yellow
-            problem: "#ffa657",     // Orange
-            done: "#238636"        // Dark Green
-        };
+    // Center the tree
+    const cx = width / 2;
+    const params = getParams();
 
-        const DEFAULTS = {
-            trunkSpacing: 200, trunkStroke: 14,
-            L1len: 200, L1angle: 50, L1stroke: 8, L1start: 0.2, L1end: 0.9,
-            L2len: 110, L2angle: 45, L2stroke: 4, L2start: 0.3, L2end: 0.95,
-            L3len: 55, L3angle: 40, L3stroke: 2, L3start: 0.3, L3end: 0.95,
-            L4len: 28, L4angle: 35, L4stroke: 0.8, L4start: 0.3, L4end: 0.95, depthShrink: 0.6,
-            twigSpacing: 25, minSproutAngle: 25, jitter: 18, collapseDepth: 2,
-            activeView: 'list', // 'fractal', 'list', 'force', 'radial'
-            activeStatusFilter: null // 'todo', 'processing', 'problem', 'done' or null
-        };
+    // Calculate layout
+    calculateTreeLayout(currentData, cx, height - 100, params);
 
-        let P = { ...DEFAULTS };
-        let activeReqId = null; // Global tracker for currently active requirement
+    // Color scale by depth
+    const color = d3.scaleSequential(d3.interpolateViridis)
+        .domain([0, countMaxDepth(currentData)]);
 
-        function writeParams() {
-            for (const key of Object.keys(P)) {
-                const el = document.getElementById('p-' + key);
-                const vEl = document.getElementById('v-' + key);
-                if (el) el.value = P[key];
-                if (vEl) vEl.textContent = P[key];
-            }
+    // Draw links first
+    const links = [];
+    collectLinks(currentData, links);
+
+    g.selectAll('.branch')
+        .data(links)
+        .enter()
+        .append('path')
+        .attr('class', 'branch')
+        .attr('d', d => `M ${d.x0} ${d.y0} C ${d.x0} ${d.y1 * params.L1start + d.y0 * (1 - params.L1start)}, ${d.x1 * params.L1start + d.x0 * (1 - params.L1start)} ${d.y1}, ${d.x1} ${d.y1}`)
+        .attr('stroke', d => color(d.depth))
+        .attr('stroke-width', getStrokeWidth(d.depth, params))
+        .attr('fill', 'none');
+
+    // Draw nodes
+    const nodes = [];
+    collectNodes(currentData, nodes);
+
+    g.selectAll('.node-circle')
+        .data(nodes)
+        .enter()
+        .append('circle')
+        .attr('class', 'node-circle')
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y)
+        .attr('r', 4)
+        .attr('fill', d => color(d.depth))
+        .on('mouseover', function(event, d) {
+            showTooltip(event, d);
+        })
+        .on('mouseout', hideTooltip);
+
+    // Add text labels
+    g.selectAll('.node-label')
+        .data(nodes)
+        .enter()
+        .append('text')
+        .attr('class', 'node-label')
+        .attr('x', d => d.x + (d.side === 'left' ? -8 : 8))
+        .attr('y', d => d.y + 4)
+        .attr('text-anchor', d => d.side === 'left' ? 'end' : 'start')
+        .attr('font-size', '10px')
+        .attr('fill', 'currentColor')
+        .text(d => d.data.name)
+        .on('mouseover', function(event, d) {
+            showTooltip(event, d.data);
+        })
+        .on('mouseout', hideTooltip);
+}
+
+// Calculate tree layout recursively
+function calculateTreeLayout(node, x, y, params) {
+    node.x = x;
+    node.y = y;
+    node.side = node.depth % 2 === 0 ? 'right' : 'left';
+
+    if (!node.children || node.children.length === 0) return;
+
+    const n = node.children.length;
+    // Sort children to alternate left/right
+    let currentY = y - params.trunkSpacing * (n - 1) / 2;
+
+    node.children.forEach((child, i) => {
+        const len = getBranchLength(child.depth, params);
+        const angle = getBranchAngle(child.depth, params);
+        const side = i % 2 === 0 ? 1 : -1;  // Alternate sides
+        child.side = side === 1 ? 'right' : 'left';
+
+        // Add random jitter
+        const jitter = (Math.random() - 0.5) * params.jitter;
+
+        const childX = x + side * Math.cos(angle) * len;
+        const childY = currentY + jitter;
+
+        child.x0 = x;
+        child.y0 = y;
+        child.x1 = childX;
+        child.y1 = childY;
+        child.depth = node.depth + 1;
+
+        calculateTreeLayout(child, childX, childY, params);
+        currentY += params.trunkSpacing;
+    });
+}
+
+function getBranchLength(depth, params) {
+    if (depth === 1) return params.L1len;
+    if (depth === 2) return params.L2len;
+    if (depth === 3) return params.L3len;
+    return params.L4len * Math.pow(params.depthShrink, depth - 3);
+}
+
+function getBranchAngle(depth, params) {
+    if (depth === 1) return params.L1angle;
+    if (depth === 2) return params.L2angle;
+    if (depth === 3) return params.L3angle;
+    return params.L4angle;
+}
+
+function getStrokeWidth(depth, params) {
+    if (depth === 0) return params.trunkStroke;
+    if (depth === 1) return params.L1stroke;
+    if (depth === 2) return params.L2stroke;
+    if (depth === 3) return params.L3stroke;
+    return params.L4stroke;
+}
+
+function countMaxDepth(node) {
+    let max = node.depth;
+    if (node.children) {
+        node.children.forEach(c => {
+            const d = countMaxDepth(c);
+            if (d > max) max = d;
+        });
+    }
+    return max;
+}
+
+function collectLinks(node, arr) {
+    if (node.children) {
+        node.children.forEach(c => {
+            arr.push({
+                x0: node.x,
+                y0: node.y,
+                x1: c.x,
+                y1: c.y,
+                depth: node.depth
+            });
+            collectLinks(c, arr);
+        });
+    }
+}
+
+function collectNodes(node, arr) {
+    arr.push(node);
+    if (node.children) {
+        node.children.forEach(c => collectNodes(c, arr));
+    }
+}
+
+// Render Notion-style collapsible list
+function renderNotionList() {
+    const container = d3.select('#list-view');
+    const root = buildToggleList(currentData);
+    container.node().appendChild(root);
+}
+
+function buildToggleList(node) {
+    const details = document.createElement('details');
+    details.className = 'toggle-item';
+    if (node.depth < getParams().collapseDepth) {
+        details.open = true;
+    }
+
+    const summary = document.createElement('summary');
+    summary.className = 'toggle-summary';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'toggle-arrow';
+    arrow.textContent = '▶';
+
+    const dot = document.createElement('span');
+    dot.className = 'toggle-dot';
+    // Gender based color
+    if (node.data.gender === 'M') {
+        dot.style.backgroundColor = '#4dabf7';
+    } else if (node.data.gender === 'F') {
+        dot.style.backgroundColor = '#f783ac';
+    } else {
+        dot.style.backgroundColor = '#999';
+    }
+
+    const title = document.createElement('span');
+    title.className = 'toggle-title';
+    title.textContent = node.data.name;
+    if (node.data.birthYear) {
+        title.textContent += ` (${node.data.birthYear})`;
+    }
+
+    summary.appendChild(arrow);
+    summary.appendChild(dot);
+    summary.appendChild(title);
+    details.appendChild(summary);
+
+    const content = document.createElement('div');
+    content.className = 'toggle-content';
+
+    if (node.children && node.children.length > 0) {
+        node.children.forEach(child => {
+            content.appendChild(buildToggleList(child));
+        });
+        details.appendChild(content);
+    }
+
+    return details;
+}
+
+// Render force-directed graph
+function renderForceDirected(width, height) {
+    const container = d3.select('#force-directed-view');
+    const svg = container.append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    // Convert to links array
+    const nodes = [];
+    const links = [];
+    const nodeMap = new Map();
+
+    function collectForce(node) {
+        nodeMap.set(node.data.id, node);
+        nodes.push({id: node.data.id, name: node.data.name, depth: node.depth, gender: node.data.gender});
+        if (node.children) {
+            node.children.forEach(c => {
+                links.push({source: node.data.id, target: c.data.id});
+                collectForce(c);
+            });
         }
+    }
 
-        function bindSliders() {
-            for (const key of Object.keys(DEFAULTS)) {
-                if (key === 'activeView') continue;
-                const el = document.getElementById('p-' + key);
-                if (!el) continue;
-                const eventType = el.tagName === 'SELECT' ? 'change' : 'input';
-                el.addEventListener(eventType, () => {
-                    P[key] = el.tagName === 'SELECT' ? el.value : parseFloat(el.value);
-                    const vEl = document.getElementById('v-' + key);
-                    if (vEl) vEl.textContent = P[key];
-                    renderTree();
-                });
-            }
-        }
+    collectForce(currentData);
 
-        let rootNodeGlobal, svgEl, gBranches, gApples, zoomBehavior;
+    const color = d3.scaleSequential(d3.interpolateViridis)
+        .domain([0, d3.max(nodes, d => d.depth)]);
 
-        d3.json("requirements-hierarchy.json").then(treeData => {
-            // Initialize d3.hierarchy
-            rootNodeGlobal = d3.hierarchy(treeData);
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+        .force('charge', d3.forceManyBody().strength(-300))
+        .force('center', d3.forceCenter(width / 2, height / 2));
 
-            // Set initial collapse state
-            collapseBelow(rootNodeGlobal, P.collapseDepth);
+    const link = svg.append('g')
+        .selectAll('line')
+        .data(links)
+        .join('line')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', 1);
 
-            const graphDiv = document.getElementById("graph");
-            const W = graphDiv.clientWidth;
-            const H = graphDiv.clientHeight;
-
-            svgEl = d3.select("#graph").append("svg")
-                .attr("width", W).attr("height", H);
-
-            zoomBehavior = d3.zoom()
-                .scaleExtent([0.02, 10])
-                .on("zoom", (event) => {
-                    gBranches.attr("transform", event.transform);
-                    gApples.attr("transform", event.transform);
-                });
-            svgEl.call(zoomBehavior);
-
-            gBranches = svgEl.append("g");
-            gApples = svgEl.append("g");
-            gAll = { gBranches, gApples, attr: () => {}, selectAll: () => ({ remove: () => {} }) };
-            propagateStatus(rootNodeGlobal);
-            writeParams();
-            bindSliders();
-            renderTree();
-
-            svgEl.call(zoomBehavior.transform,
-                d3.zoomIdentity.translate(W * 0.15, H * 0.5).scale(0.35));
-
-        }).catch(err => {
-            document.getElementById("graph").innerHTML =
-                `<div style="padding:40px;color:#f85149;">Error: ${err.message}</div>`;
+    const node = svg.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', d => d.depth === 0 ? 8 : 5)
+        .attr('fill', d => {
+            if (d.gender === 'M') return '#4dabf7';
+            if (d.gender === 'F') return '#f783ac';
+            return color(d.depth);
         });
 
-
-        /**
-         * Get branch params for a given depth level.
-         */
-        function depthParams(depth, childCount = 0, isExpanded = false) {
-            let base;
-            switch (depth) {
-                case 1: base = { len: P.L1len, angle: P.L1angle, stroke: P.L1stroke, start: P.L1start, end: P.L1end }; break;
-                case 2: base = { len: P.L2len, angle: P.L2angle, stroke: P.L2stroke, start: P.L2start, end: P.L2end }; break;
-                case 3: base = { len: P.L3len, angle: P.L3angle, stroke: P.L3stroke, start: P.L3start, end: P.L3end }; break;
-                default: {
-                    const scale = Math.pow(P.depthShrink, depth - 4);
-                    base = {
-                        len: P.L4len * scale,
-                        angle: P.L4angle,
-                        stroke: Math.max(0.2, P.L4stroke * scale),
-                        start: P.L4start,
-                        end: P.L4end
-                    };
-                }
-            }
-            // Dynamic length based on child count and static spacing,
-            // ONLY if currently expanded. Otherwise use base length.
-            if (isExpanded && childCount > 1) {
-                const requiredSpan = (childCount - 1) * P.twigSpacing;
-                const spanFactor = base.end - base.start;
-                const dynamicLen = requiredSpan / spanFactor;
-                base.len = Math.max(base.len, dynamicLen);
-            }
-            return base;
-        }
-
-        // Helper to get start/end for a depth
-        function getSproutRange(depth) {
-            switch (depth) {
-                case 1: return { start: P.L1start, end: P.L1end };
-                case 2: return { start: P.L2start, end: P.L2end };
-                case 3: return { start: P.L3start, end: P.L3end };
-                default: return { start: P.L4start, end: P.L4end };
-            }
-        }
-
-
-        function renderTree() {
-            // Stop force simulation if switching away from force view
-            if (forceSimulation && P.activeView !== 'force') {
-                forceSimulation.stop();
-                forceSimulation = null;
-            }
-
-            if (P.activeView === 'fractal') {
-                d3.select("#graph svg").style("display", "block");
-                d3.select("#list-view").style("display", "none");
-                d3.select("#force-directed-view").style("display", "none");
-                d3.select("#radial-cluster-view").style("display", "none");
-                renderFractalTree();
-            } else if (P.activeView === 'list') {
-                d3.select("#graph svg").style("display", "none");
-                d3.select("#list-view").style("display", "block");
-                d3.select("#force-directed-view").style("display", "none");
-                d3.select("#radial-cluster-view").style("display", "none");
-                renderList();
-            } else if (P.activeView === 'force') {
-                d3.select("#graph svg").style("display", "none");
-                d3.select("#list-view").style("display", "none");
-                d3.select("#force-directed-view").style("display", "block");
-                d3.select("#radial-cluster-view").style("display", "none");
-                renderForceDirectedTree();
-            } else if (P.activeView === 'radial') {
-                d3.select("#graph svg").style("display", "none");
-                d3.select("#list-view").style("display", "none");
-                d3.select("#force-directed-view").style("display", "none");
-                d3.select("#radial-cluster-view").style("display", "block");
-                renderRadialCluster();
-            }
-        }
-
-        window.setView = function (name) {
-            P.activeView = name;
-            // Update dropdown value
-            const select = document.getElementById('view-select');
-            if (select) select.value = name;
-            renderTree();
-        };
-
-        function renderFractalTree() {
-            // Ensure SVG and groups exist
-            if (!svgEl || !gBranches || !gApples) {
-                console.error('Fractal view SVG elements not initialized');
-                return;
-            }
-
-            gBranches.selectAll("*").remove();
-            gApples.selectAll("*").remove();
-            const graphDiv = document.getElementById("graph");
-            const W = graphDiv.clientWidth;
-
-            // Domains are level 1 children of root
-            const domains = rootNodeGlobal.children || [];
-
-            const trunkX = W * 0.5; // Centered
-            const trunkBottom = domains.length * P.trunkSpacing + 100;
-            const trunkHeight = domains.length * P.trunkSpacing + 50;
-            const trunkTop = trunkBottom - trunkHeight;
-
-            // ─── TRUNK ───
-            gBranches.append("line")
-                .attr("x1", trunkX).attr("y1", trunkBottom + 30)
-                .attr("x2", trunkX).attr("y2", trunkTop - 40)
-                .attr("stroke", "#333333")
-                .attr("stroke-width", P.trunkStroke)
-                .attr("stroke-linecap", "round");
-
-            const angleRad = P.L1angle * Math.PI / 180;
-
-            // D3 hierarchy .count() calculates descendants
-            domains.forEach(d => d.value = d.count().value);
-            domains.sort((a, b) => b.value - a.value);
-
-            domains.forEach((domainNode, i) => {
-                const side = (i % 2 === 0) ? 1 : -1;
-                const jitter = P.jitter > 0 ? ((i * 41 + 7) % (P.jitter * 2 + 1)) - P.jitter : 0;
-                const attachY = trunkBottom - P.trunkSpacing * (i + 1) + jitter;
-
-                const children = domainNode.children || [];
-                const dp = depthParams(1, children.length, !!domainNode.children);
-                const endX = trunkX + Math.sin(angleRad) * dp.len * side;
-                const endY = attachY - Math.cos(angleRad) * dp.len;
-
-                drawBranch(trunkX, attachY, endX, endY, domainNode, 1, side === 1 ? -Math.PI / 2 + angleRad : -Math.PI / 2 - angleRad);
-                if (domainNode.children) {
-                    const branchAngle = Math.atan2(endY - attachY, endX - trunkX);
-                    drawSubBranches(trunkX, attachY, endX, endY, domainNode.children, side, branchAngle, 2);
-                }
-            });
-            updateStatusCounts();
-
-            // Only reset zoom on initial render, not on re-renders during sync
-            // Store initial transform in a variable that persists across renders
-            if (!window.fractalZoomInitialized) {
-                const H = graphDiv.clientHeight;
-                svgEl.transition().duration(0).call(zoomBehavior.transform,
-                    d3.zoomIdentity.translate(W * 0.15, H * 0.5).scale(0.35));
-                window.fractalZoomInitialized = true;
-            }
-            // On re-renders, the current zoom transform is preserved automatically
-        }
-
-        function renderList() {
-            const container = d3.select("#list-view");
-            container.selectAll("*").remove();
-
-            function matchesFilter(node) {
-                if (!P.activeStatusFilter) return true;
-                if (node.data.status === P.activeStatusFilter) return true;
-                const children = node.children || node._children || [];
-                return children.some(c => matchesFilter(c));
-            }
-
-            function buildList(node, parent) {
-                if (!matchesFilter(node)) return;
-
-                const children = node.children || node._children || [];
-                const item = parent.append("li").attr("class", "toggle-item");
-                const isExpanded = !!(node.children && node.children.length > 0);
-                const details = item.append("details")
-                    .property("open", isExpanded);
-
-                details.on("toggle", function () {
-                    const isOpen = this.open;
-                    if (isOpen && node._children) {
-                        node.children = node._children;
-                        node._children = null;
-                        updateStatusCounts();
-                    } else if (!isOpen && node.children) {
-                        node._children = node.children;
-                        node.children = null;
-                        updateStatusCounts();
-                    }
-                });
-
-                const summary = details.append("summary").attr("class", "toggle-summary");
-                const statusColor = STATUS_COLORS[node.data.status || 'todo'];
-
-                // Faint style for structural-only ancestors when filtering
-                const isMatch = !P.activeStatusFilter || node.data.status === P.activeStatusFilter;
-                if (!isMatch) summary.style("opacity", 0.4);
-
-                summary.append("span").attr("class", "toggle-arrow").text("▶");
-                summary.append("div").attr("class", "toggle-dot").style("background", statusColor);
-                const titleSpan = summary.append("span").attr("class", "toggle-title").text(node.data.title);
-
-                if (node.data.id === activeReqId) {
-                    titleSpan.style("font-weight", "bold").style("color", "#0066cc");
-                    summary.append("span")
-                        .style("background", "#0066cc").style("color", "#ffffff")
-                        .style("padding", "1px 4px").style("border-radius", "3px")
-                        .style("font-size", "9px").style("margin-left", "8px")
-                        .style("font-weight", "bold")
-                        .text("ACTIVE");
-                }
-
-                if (children.length > 0) {
-                    const content = details.append("div").attr("class", "toggle-content");
-                    const ul = content.append("ul").style("padding", "0").style("margin", "0");
-                    children.forEach(child => buildList(child, ul));
-                } else {
-                    summary.select(".toggle-arrow").style("visibility", "hidden");
-                }
-            }
-
-            const rootList = container.append("ul").style("padding", "0").style("margin", "0");
-            (rootNodeGlobal.children || []).forEach(domainNode => buildList(domainNode, rootList));
-            updateStatusCounts();
-        }
-
-
-
-        function updateStatusCounts() {
-            const counts = { todo: 0, processing: 0, problem: 0, done: 0, total: 0 };
-
-            // D3 each() visits all nodes in the current view state (including children/collapsed)
-            // But we only want to count nodes and their children if they are technically "visible" 
-            // to match previous behavior if needed, or just count all.
-            // Let's use rootNodeGlobal.each to count EVERYTHING in the hierarchy.
-            rootNodeGlobal.each(d => {
-                if (d.depth === 0) return; // skip root
-                counts.total++;
-                const status = d.data.status || 'todo';
-                if (counts.hasOwnProperty(status)) counts[status]++;
-            });
-
-            // Update UI
-            document.getElementById('count-done').textContent = counts.done;
-            document.getElementById('count-processing').textContent = counts.processing;
-            document.getElementById('count-problem').textContent = counts.problem;
-            document.getElementById('count-todo').textContent = counts.todo;
-            document.getElementById('count-total').textContent = counts.total;
-
-            // Highlight active filter in HUD
-            d3.selectAll(".hud-item").classed("active", false);
-            if (P.activeStatusFilter) {
-                d3.select("#hud-" + P.activeStatusFilter).classed("active", true);
-            }
-        }
-
-        window.toggleFilter = function (status) {
-            P.activeStatusFilter = (P.activeStatusFilter === status) ? null : status;
-            renderTree();
-        };
-
-        // Force-directed tree view
-        let forceSimulation = null;
-
-        function renderForceDirectedTree() {
-            if (!rootNodeGlobal) return;
-
-            const container = d3.select("#force-directed-view");
-            container.selectAll("*").remove();
-
-            const containerNode = container.node();
-            const width = containerNode ? containerNode.clientWidth : 928;
-            const height = containerNode ? containerNode.clientHeight : 600;
-
-            // Theme-aware colors for force-directed view
-            const isDarkTheme = document.body.classList.contains('dark');
-            const linkColor = isDarkTheme ? '#666666' : '#999999';
-            const nodeStrokeColor = isDarkTheme ? '#1a1a2e' : '#fff';
-
-            // Use the already-loaded rootNodeGlobal and re-create hierarchy from original data
-            // Get all visible nodes based on current expansion state
-            const allNodes = [];
-            const allLinks = [];
-
-            // Traverse the current hierarchy state
-            function traverse(node, parentIndex) {
-                const currentIndex = allNodes.length;
-                const nodeData = {
-                    id: node.data.id,
-                    title: node.data.title,
-                    status: node.data.status || 'todo',
-                    depth: node.depth,
-                    children: !!node.children,
-                    _hasChildren: !!(node._children || (node.data._children && node.data._children.length > 0)),
-                    _collapsed: !node.children && !!(node._children),
-                    _index: currentIndex
-                };
-                allNodes.push(nodeData);
-
-                if (parentIndex !== null) {
-                    allLinks.push({
-                        source: parentIndex,
-                        target: currentIndex
-                    });
-                }
-
-                const children = node.children || [];
-                children.forEach(child => traverse(child, currentIndex));
-            }
-
-            traverse(rootNodeGlobal, null);
-
-            // Create SVG container
-            const svg = container.append("svg")
-                .attr("width", width)
-                .attr("height", height)
-                .attr("viewBox", [-width / 2, -height / 2, width, height])
-                .attr("style", "max-width: 100%; height: auto; height: 100%; width: 100%;");
-
-            // Create zoom behavior
-            const zoom = d3.zoom()
-                .scaleExtent([0.1, 4])
-                .on("zoom", (event) => {
-                    g.attr("transform", event.transform);
-                });
-            svg.call(zoom);
-
-            // Group for all elements
-            const g = svg.append("g");
-
-            // Create force simulation
-            const simulation = d3.forceSimulation(allNodes)
-                .force("link", d3.forceLink(allLinks).id(d => d._index).distance(80).strength(0.5))
-                .force("charge", d3.forceManyBody().strength(-300))
-                .force("center", d3.forceCenter(0, 0))
-                .force("collide", d3.forceCollide(25));
-
-            // Draw links
-            const link = g.append("g")
-                .attr("stroke", linkColor)
-                .attr("stroke-opacity", 0.6)
-                .selectAll("line")
-                .data(allLinks)
-                .join("line")
-                .attr("stroke-width", 1.5);
-
-            // Draw nodes
-            const node = g.append("g")
-                .attr("stroke", nodeStrokeColor)
-                .attr("stroke-width", 1.5)
-                .selectAll("g")
-                .data(allNodes)
-                .join("g");
-
-            // Node circles - visual indicator for collapsed nodes (ring around parent nodes)
-            node.append("circle")
-                .attr("r", d => d.children ? 8 : d._collapsed ? 7 : 5)
-                .attr("fill", d => {
-                    if (d._collapsed) {
-                        // Collapsed parent: show with distinctive color
-                        return "#ff9800";
-                    }
-                    if (!d.children) {
-                        return STATUS_COLORS[d.status] || "#8b949e";
-                    }
-                    return "#1f77b4";
-                })
-                .attr("stroke", d => {
-                    if (d._collapsed) return "#ff9800";
-                    return d.children ? "#1f77b4" : "#fff";
-                })
-                .attr("stroke-dasharray", d => d._collapsed ? "3,2" : "none")
-                .style("cursor", d => d._hasChildren ? "pointer" : "default")
-                .on("click", (event, d) => {
-                    event.stopPropagation();
-                    toggleNodeInHierarchy(d.id);
-                    renderForceDirectedTree(); // Re-render to show updated state
-                });
-
-            // Add collapsed indicator (+ sign) for collapsed nodes
-            node.filter(d => d._collapsed).append("text")
-                .attr("dx", 0)
-                .attr("dy", 4)
-                .attr("text-anchor", "middle")
-                .attr("font-size", "10px")
-                .attr("font-weight", "bold")
-                .attr("fill", "#fff")
-                .style("pointer-events", "none")
-                .text("+");
-
-            // Node labels - with high contrast for visibility
-            node.append("text")
-                .attr("dx", d => d._collapsed ? 12 : 10)
-                .attr("dy", 4)
-                .attr("font-size", d => d.depth === 0 ? "14px" : d.depth === 1 ? "11px" : "10px")
-                .attr("font-weight", "600")
-                .attr("fill", "var(--text-primary)")
-                .attr("stroke", "var(--text-stroke)")
-                .attr("stroke-width", "3px")
-                .attr("paint-order", "stroke")
-                .attr("text-shadow", "0 1px 2px rgba(0,0,0,0.2)")
-                .text(d => {
-                    const name = d.title || d.id || "Root";
-                    const collapsedSuffix = d._collapsed ? " (+)" : "";
-                    return d.depth === 0 ? name : (d.depth <= 2 ? name + collapsedSuffix : (name.length > 20 ? name.substring(0, 20) + "..." : name));
-                })
-                .style("pointer-events", "none");
-
-            // Tooltip on hover - show collapse state
-            node.append("title")
-                .text(d => {
-                    const status = d.status;
-                    const collapsedState = d._collapsed ? "\n[COLLAPSED - Click to expand]" : (d.children ? "\n[Expanded]" : "");
-                    return `${d.title}\nStatus: ${status}\nDepth: ${d.depth}${collapsedState}`;
-                });
-
-            // Drag behavior
-            function drag(simulation) {
-                function dragstarted(event, d) {
-                    if (!event.active) simulation.alphaTarget(0.3).restart();
-                    d.fx = d.x;
-                    d.fy = d.y;
-                }
-
-                function dragged(event, d) {
-                    d.fx = event.x;
-                    d.fy = event.y;
-                }
-
-                function dragended(event, d) {
-                    if (!event.active) simulation.alphaTarget(0);
-                    d.fx = null;
-                    d.fy = null;
-                }
-
-                return d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended);
-            }
-
-            node.call(drag(simulation));
-
-            // Update positions on tick
-            simulation.on("tick", () => {
-                link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                node
-                    .attr("transform", d => `translate(${d.x},${d.y})`);
-            });
-
-            // Store simulation reference for cleanup
-            forceSimulation = simulation;
-            updateStatusCounts();
-        }
-
-        // Global variable for radial cluster SVG zoom
-        let radialZoomTransform;
-
-        /**
-         * Render a collapsible radial cluster tree view
-         * Uses d3.cluster() layout with click-to-expand/collapse functionality
-         */
-        function renderRadialCluster() {
-            if (!rootNodeGlobal) return;
-
-            const container = d3.select("#radial-cluster-view");
-
-            // Save current zoom transform before removing content
-            const savedTransform = radialZoomTransform;
-
-            container.selectAll("*").remove();
-
-            const width = 1152;
-            const height = width;
-            const cx = width * 0.5;
-            const cy = height * 0.54;
-            const radius = Math.min(width, height) / 2 - 80;
-
-            // Create radial cluster layout
-            const tree = d3.cluster()
-                .size([2 * Math.PI, radius])
-                .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
-
-            // Apply layout to current hierarchy state (respecting expanded/collapsed)
-            const root = tree(rootNodeGlobal);
-
-            // Create SVG container with zoom
-            const svg = container.append("svg")
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .attr("viewBox", [-cx, -cy, width, height])
-                .attr("style", "max-width: 100%; height: 100%; font: 11px sans-serif;");
-
-            // Add zoom behavior
-            const zoom = d3.zoom()
-                .scaleExtent([0.3, 4])
-                .on("zoom", (event) => {
-                    svg.select("g.radial-content").attr("transform", event.transform);
-                    radialZoomTransform = event.transform;
-                });
-            svg.call(zoom);
-
-            // Group for content
-            const g = svg.append("g").attr("class", "radial-content");
-
-            // Get link color from CSS variable (changes with theme)
-            const isDarkTheme = document.body.classList.contains('dark');
-            const linkColor = isDarkTheme ? '#cccccc' : '#555555';
-            const linkOpacity = isDarkTheme ? 0.6 : 0.4;
-
-            // Draw links (edges)
-            g.append("g")
-                .attr("class", "links")
-                .attr("fill", "none")
-                .attr("stroke", linkColor)
-                .attr("stroke-opacity", linkOpacity)
-                .attr("stroke-width", 1.5)
-                .selectAll()
-                .data(root.links())
-                .join("path")
-                    .attr("class", "link")
-                    .attr("d", d3.linkRadial()
-                        .angle(d => d.x)
-                        .radius(d => d.y));
-
-            // Draw nodes
-            const nodeGroup = g.append("g").attr("class", "nodes");
-
-            nodeGroup.selectAll()
-                .data(root.descendants())
-                .join("g")
-                    .attr("class", "node")
-                    .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
-                    .each(function(d) {
-                        const nodeEl = d3.select(this);
-                        const hasChildren = d.children || d._children;
-                        const status = d.data.status || 'todo';
-                        // Node color based on status
-                        const nodeFillColor = STATUS_COLORS[status] || '#8b949e';
-                        // Stroke color - darker version for contrast
-                        const nodeStrokeColor = isDarkTheme ? '#1a1a2e' : '#333333';
-
-                        // Draw circle
-                        nodeEl.append("circle")
-                            .attr("r", hasChildren ? 6 : 4)
-                            .attr("fill", nodeFillColor)
-                            .attr("stroke", nodeStrokeColor)
-                            .attr("stroke-width", hasChildren ? 2 : 1.5)
-                            .on("click", (event, d) => {
-                                event.stopPropagation();
-                                toggleNodeByPath(d);
-                            });
-
-                        // Draw label (only for nodes at reasonable radius)
-                        if (d.y > 20) {
-                            nodeEl.append("text")
-                                .attr("dy", "0.31em")
-                                // Fix: add 180° rotation for bottom half, and check children properly
-                                .attr("transform", d => `rotate(${d.x >= Math.PI ? 180 : 0})`)
-                                .attr("x", d => d.x < Math.PI === !(d.children && d.children.length > 0) ? 6 : -6)
-                                .attr("text-anchor", d => d.x < Math.PI === !(d.children && d.children.length > 0) ? "start" : "end")
-                                .attr("paint-order", "stroke")
-                                .attr("stroke", "var(--text-stroke)")
-                                .attr("stroke-width", 3)
-                                .attr("fill", "var(--text-primary)")
-                                .attr("font-size", "10px")
-                                .text(d => {
-                                    const name = d.data.title || d.data.name || "";
-                                    return name.length > 25 ? name.substring(0, 25) + "…" : name;
-                                });
-                        }
-                    });
-
-            // Apply saved zoom transform if it exists (from sync), otherwise use default
-            if (savedTransform) {
-                svg.call(zoom.transform, savedTransform);
-                radialZoomTransform = savedTransform;
-            } else if (!window.radialZoomInitialized) {
-                svg.call(zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.8));
-                radialZoomTransform = d3.zoomIdentity.translate(0, 0).scale(0.8);
-                window.radialZoomInitialized = true;
-            }
-            // On re-renders with saved transform, the user's zoom/pan position is preserved
-        }
-
-        /**
-         * Toggle expand/collapse a node by finding it in the hierarchy
-         * and swapping children/_children
-         */
-        function toggleNodeByPath(clickedNode) {
-            // Find the corresponding node in rootNodeGlobal
-            const nodeToToggle = findNodeInHierarchy(rootNodeGlobal, clickedNode.data.id);
-            if (!nodeToToggle) return;
-
-            // Toggle children/_children
-            if (nodeToToggle.children) {
-                nodeToToggle._children = nodeToToggle.children;
-                nodeToToggle.children = null;
-            } else if (nodeToToggle._children) {
-                nodeToToggle.children = nodeToToggle._children;
-                nodeToToggle._children = null;
-            }
-
-            // Re-render the radial cluster
-            renderRadialCluster();
-        }
-
-        /**
-         * Find a node in the hierarchy by ID
-         */
-        function findNodeInHierarchy(root, id) {
-            if (root.data.id === id) return root;
-            const children = root.children || root._children || [];
-            for (const child of children) {
-                const found = findNodeInHierarchy(child, id);
-                if (found) return found;
-            }
-            return null;
-        }
-
-
-        /**
-         * Recursively draw sub-branches spaced along the parent branch.
-         * Each child attaches at a different point along the line from (px1,py1) to (px2,py2),
-         * mimicking how real twigs are distributed along a branch.
-         */
-        function drawSubBranches(px1, py1, px2, py2, childNodes, side, parentAngle, depth) {
-            if (!childNodes || childNodes.length === 0) return;
-
-            // Sort childNodes by .value (descendant count calculated by d3.count())
-            childNodes.forEach(c => c.value = c.count().value);
-            childNodes.sort((a, b) => b.value - a.value);
-
-            const n = childNodes.length;
-            const dp = depthParams(depth, n);
-            const range = getSproutRange(depth);
-            const uniformAngleRad = dp.angle * Math.PI / 180;
-
-            const startT = range.start;
-            const endT = range.end;
-
-            childNodes.forEach((childNode, i) => {
-                const posT = n === 1 ? (startT + endT) / 2 : startT + (i / (n - 1)) * (endT - startT);
-                const attachX = px1 + (px2 - px1) * posT;
-                const attachY = py1 + (py2 - py1) * posT;
-
-                const alternateSide = (i % 2 === 0) ? 1 : -1;
-                const sideAngle = alternateSide * uniformAngleRad;
-                const childAngle = parentAngle + sideAngle;
-
-                const subChildren = childNode.children || childNode._children || [];
-                const isChildExpanded = !!childNode.children;
-                const cdp = depthParams(depth, subChildren.length, isChildExpanded);
-
-                const tipX = attachX + Math.cos(childAngle) * cdp.len;
-                const tipY = attachY + Math.sin(childAngle) * cdp.len;
-
-                drawBranch(attachX, attachY, tipX, tipY, childNode, depth, sideAngle);
-
-                if (childNode.children) {
-                    drawSubBranches(attachX, attachY, tipX, tipY, childNode.children, side, childAngle, depth + 1);
-                }
-            });
-        }
-
-        function drawStatusIcon(x, y, status, size, data, branchAngle) {
-            const color = STATUS_COLORS[status || 'todo'];
-            const isActive = data.id === activeReqId;
-
-            // Simple colored circle for status
-            gApples.append("circle")
-                .attr("cx", x)
-                .attr("cy", y)
-                .attr("r", isActive ? size * 1.3 : size)
-                .attr("fill", color)
-                .attr("stroke", isActive ? "#58a6ff" : "none")
-                .attr("stroke-width", isActive ? 2 : 0)
-                .style("filter", isActive ? "drop-shadow(0px 0px 8px #58a6ff)" : "drop-shadow(0px 0px 1px rgba(0,0,0,0.3))");
-        }
-
-
-
-        /**
-         * Draw a single branch line that represents one requirement/category.
-         * The line itself IS the data — no circles/nodes.
-         */
-        function drawBranch(x1, y1, x2, y2, node, depth, side) {
-            const data = node.data;
-            const statusColor = STATUS_COLORS[data.status || 'todo'];
-            const dp = depthParams(depth, (node.children || node._children || []).length, !!node.children);
-            const hasHidden = !!node._children;
-            const branchGroup = gBranches.append("g").attr("class", "branch-node");
-
-            // Main branch line
-            const line = branchGroup.append("line")
-                .attr("class", "branch")
-                .attr("x1", x1).attr("y1", y1)
-                .attr("x2", x2).attr("y2", y2)
-                .attr("stroke", statusColor)
-                .attr("stroke-width", dp.stroke)
-                .attr("stroke-opacity", 1)
-                .attr("stroke-linecap", "round");
-
-            // Calculate branch angle for leaf orientation
-            const branchAngle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-
-            // Icon at the tip
-            const iconSize = depth === 1 ? 7 : depth === 2 ? 5 : 3;
-            drawStatusIcon(x2, y2, data.status, iconSize, data, branchAngle);
-
-            // Collapsed indicator: a short perpendicular tick at the tip
-            if (hasHidden) {
-                const tickLen = dp.stroke * 1.5;
-                const angle = Math.atan2(y2 - y1, x2 - x1);
-                const perpAngle = angle + Math.PI / 2;
-                branchGroup.append("line")
-                    .attr("x1", x2 - Math.cos(perpAngle) * tickLen)
-                    .attr("y1", y2 - Math.sin(perpAngle) * tickLen)
-                    .attr("x2", x2 + Math.cos(perpAngle) * tickLen)
-                    .attr("y2", y2 + Math.sin(perpAngle) * tickLen)
-                    .attr("stroke", "#ffa657")
-                    .attr("stroke-width", Math.max(1, dp.stroke * 0.4))
-                    .attr("stroke-linecap", "round")
-                    .attr("opacity", 1);
-            }
-
-            // Invisible wider hit area for easier clicking/hovering
-            const hitLine = branchGroup.append("line")
-                .attr("x1", x1).attr("y1", y1)
-                .attr("x2", x2).attr("y2", y2)
-                .attr("stroke", "transparent")
-                .attr("stroke-width", Math.max(8, dp.stroke + 6))
-                .attr("cursor", "pointer");
-
-            // Labels with level-specific visibility
-            const fontSize = depth === 1 ? "14px" : depth === 2 ? "11px" : "10px";
-            const fontWeight = depth === 1 ? "bold" : "normal";
-            const isVisible = depth <= 2;
-
-            const angle = Math.atan2(y2 - y1, x2 - x1);
-            const textAngleDegrees = angle * 180 / Math.PI;
-            const textAngle = (textAngleDegrees > 90 || textAngleDegrees < -90) ? textAngleDegrees + 180 : textAngleDegrees;
-
-            const midX = (x1 + x2) / 2;
-            const midY = (y1 + y2) / 2;
-
-            const label = branchGroup.append("text")
-                .attr("x", midX)
-                .attr("y", midY - dp.stroke - 2)
-                .attr("fill", "var(--text-primary)")
-                .attr("font-size", fontSize)
-                .attr("font-weight", fontWeight)
-                .attr("text-anchor", "middle")
-                .attr("transform", `rotate(${textAngle}, ${midX}, ${midY - dp.stroke - 2})`)
-                .text(truncate(data.title, 20))
-                .style("opacity", isVisible ? 1 : 0)
-                .style("pointer-events", "none");
-
-            // Interaction
-            hitLine.on("mouseover", (event) => {
-                line.attr("stroke-opacity", 1);
-                if (!isVisible) label.transition().duration(200).style("opacity", 1);
-
-                const cc = (data.children || []).length + (data._children || []).length;
-                d3.select("#tooltip").style("opacity", 1)
-                    .html(`<strong style="color:${statusColor}">${truncate(data.title, 60)}</strong><br/>
-                           <span style="font-size:11px;opacity:0.8;">${data.description || ''}</span><br/>
-                           ${(data.type || '').replace(/_/g, ' ')}
-                           ${cc ? ` · ${cc} sub-branches` : ' · leaf'}
-                           ${hasHidden ? '<br/><em style="color:#f0883e">Click to expand</em>' : ''}`)
-                    .style("left", (event.offsetX + 15) + "px")
-                    .style("top", (event.offsetY - 15) + "px");
-
-                showDetails(data);
-            })
-                .on("mousemove", (event) => {
-                    d3.select("#tooltip")
-                        .style("left", (event.offsetX + 15) + "px")
-                        .style("top", (event.offsetY - 15) + "px");
-                })
-                .on("mouseout", () => {
-                    line.attr("stroke-opacity", 1);
-                    if (!isVisible) label.transition().duration(200).style("opacity", 0);
-                    d3.select("#tooltip").style("opacity", 0);
-                })
-                .on("click", () => {
-                    toggleData(data);
-                    renderTree();
-                    showTab('info');
-                    showDetails(data);
-                });
-        }
-
-
-        // ─── Helpers ───
-
-        /**
-         * Recursively count all descendants (including in collapsed branches).
-         */
-        function collapseBelow(d, max) {
-            if (d.children && d.depth >= max) {
-                d._children = d.children;
-                d.children = null;
-            }
-            (d.children || d._children || []).forEach(c => collapseBelow(c, max));
-        }
-
-        function expandAllNodes(d) {
-            if (d._children) {
-                d.children = d._children;
-                d._children = null;
-            }
-            (d.children || []).forEach(expandAllNodes);
-        }
-
-        function toggleData(d) {
-            if (d.children) {
-                d._children = d.children;
-                d.children = null;
-            }
-            else if (d._children) {
-                d.children = d._children;
-                d._children = null;
-            }
-        }
-
-        // Toggle a node by ID in the hierarchy - used by force-directed view click handler
-        function toggleNodeInHierarchy(id) {
-            const node = rootNodeGlobal.descendants().find(d => d.data.id === id);
-            if (node) {
-                toggleData(node);
-            }
-        }
-
-        function truncate(s, max) {
-            return s && s.length > max ? s.substring(0, max) + "\u2026" : s;
-        }
-
-        function showTab(name) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-' + name).classList.add('active');
-            document.querySelectorAll('.tab-btn')[name === 'params' ? 0 : 1].classList.add('active');
-        }
-
-        function showDetails(data) {
-            const details = document.getElementById("details");
-            const color = DEPTH_COLORS[1]; // generic
-            const tc = data.type === 'functional_domain' ? DEPTH_COLORS[1]
-                : data.type === 'prd' ? DEPTH_COLORS[2]
-                    : data.type === 'section' ? DEPTH_COLORS[3]
-                        : data.type === 'leaf_requirement' ? DEPTH_COLORS[4]
-                            : DEPTH_COLORS[0];
-            const goals = (data.goals || []).map(g => `<li style="font-size:11px;color:#666666;margin-bottom:4px;">${g}</li>`).join('');
-            details.innerHTML = `
-                <h3 style="color:${tc};font-size:14px;margin-bottom:8px;">${data.title}</h3>
-                <div class="stat"><span class="stat-label">Type:</span><span class="badge" style="background:${tc}22;color:${tc};">${(data.type || '').replace(/_/g, ' ')}</span></div>
-                ${data.domain ? `<div class="stat"><span class="stat-label">Domain:</span><span class="stat-val">${data.domain}</span></div>` : ''}
-                ${data.status ? `<div class="stat"><span class="stat-label">Status:</span><span class="stat-val">${data.status}</span></div>` : ''}
-                ${data.stage ? `<div class="stat"><span class="stat-label">Stage:</span><span class="stat-val">${data.stage}</span></div>` : ''}
-                ${data.owning_sig ? `<div class="stat"><span class="stat-label">SIG:</span><span class="stat-val">${data.owning_sig}</span></div>` : ''}
-                <div class="stat"><span class="stat-label">Granularity:</span><span class="stat-val">${data.granularity || '\u2014'}</span></div>
-                <div class="stat"><span class="stat-label">Complexity:</span><span class="stat-val">${data.complexity || '\u2014'}</span></div>
-                ${goals ? `<h4 style="color:#7ee787;margin:12px 0 6px;font-size:12px;">Goals</h4><ul style="padding-left:16px;">${goals}</ul>` : ''}
-                ${data.source_url ? `<a href="${data.source_url}" target="_blank" style="display:block;margin-top:12px;color:#58a6ff;font-size:11px;">View on GitHub \u2192</a>` : ''}
-            `;
-        }
-
-        // ─── Controls ───
-
-        window.resetView = function () {
-            const W = document.getElementById("graph").clientWidth;
-            const H = document.getElementById("graph").clientHeight;
-            svgEl.transition().duration(500).call(zoomBehavior.transform,
-                d3.zoomIdentity.translate(W * 0.1, H * 0.45).scale(0.22));
-        };
-
-        // ─── Controls ───
-        // Unified collapse/expand - works across all views (fractal, list, force-directed)
-
-        window.collapseAll = function () {
-            collapseBelow(rootNodeGlobal, 1);
-            renderTree(); // Re-renders current active view with updated collapse state
-        };
-
-        window.expandToLevel = function (targetDepth) {
-            rootNodeGlobal.each(d => {
-                if (d.depth < targetDepth) {
-                    if (d._children) { d.children = d._children; d._children = null; }
-                } else {
-                    if (d.children) { d._children = d.children; d.children = null; }
-                }
-            });
-            renderTree(); // Re-renders current active view with updated collapse state
-        };
-
-        window.expandAll = function () {
-            rootNodeGlobal.each(expandAllNodes);
-            renderTree(); // Re-renders current active view with updated collapse state
-        };
-
-        window.resetParams = function () {
-            P = { ...DEFAULTS };
-            writeParams();
-            expandAllNodes(rootNodeGlobal);
-            collapseBelow(rootNodeGlobal, P.collapseDepth);
-            renderTree();
-        };
-
-        // ─── Polling ───
-        setInterval(() => {
-            d3.json("requirements-hierarchy.json").then(data => {
-                const indicator = document.getElementById("poll-status");
-                indicator.textContent = "Syncing...";
-                indicator.style.color = "#7ee787";
-
-                // Map new data to existing hierarchy while preserving expansion state
-                syncData(rootNodeGlobal, data);
-                propagateStatus(rootNodeGlobal);
-
-                // Only re-render if not in force-directed view to avoid collapsing animation
-                if (P.activeView !== 'force') {
-                    renderTree();
-                }
-                // For force-directed view, data is updated in place - simulation continues
-
-                setTimeout(() => {
-                    indicator.textContent = "Watching...";
-                    indicator.style.color = "#666666";
-                }, 1000);
-            });
-        }, 5000);
-
-        function syncData(targetNode, sourceData) {
-            // Sync data properties
-            targetNode.data = sourceData;
-
-            if (sourceData["the id of current requirement working on"]) {
-                activeReqId = sourceData["the id of current requirement working on"];
-            }
-
-            const targetChildren = (targetNode.children || targetNode._children || []);
-            const sourceChildren = (sourceData.children || []);
-
-            sourceChildren.forEach(srcChildData => {
-                let tgtChildNode = targetChildren.find(c => c.data.id === srcChildData.id);
-                if (tgtChildNode) {
-                    syncData(tgtChildNode, srcChildData);
-                } else {
-                    // New child: wrap in d3.hierarchy and add
-                    const newNode = d3.hierarchy(srcChildData);
-                    newNode.parent = targetNode;
-                    newNode.depth = targetNode.depth + 1;
-
-                    if (targetNode.children) {
-                        targetNode.children.push(newNode);
-                    } else if (targetNode._children) {
-                        targetNode._children.push(newNode);
-                    } else {
-                        targetNode.children = [newNode];
-                    }
-                }
-            });
-        }
-
-        // ─── Resize Handler ───
-        window.addEventListener('resize', () => {
-            const graphDiv = document.getElementById("graph");
-            if (!graphDiv || !svgEl) return;
-            const W = graphDiv.clientWidth;
-            const H = graphDiv.clientHeight;
-            svgEl.attr("width", W).attr("height", H);
+    const label = svg.append('g')
+        .selectAll('text')
+        .data(nodes)
+        .join('text')
+        .attr('dx', 8)
+        .attr('dy', 3)
+        .attr('font-size', '10px')
+        .attr('fill', 'currentColor')
+        .text(d => d.name);
+
+    simulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+
+        node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+
+        label
+            .attr('x', d => d.x)
+            .attr('y', d => d.y);
+    });
+
+    // Add zoom
+    const zoom = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+            svg.attr('transform', event.transform);
         });
+    svg.call(zoom);
+}
 
-        function propagateStatus(node) {
-            // D3 hierarchy eachAfter executes logc on children before parents (post-order)
-            node.eachAfter(d => {
-                const children = d.children || d._children || [];
-                if (children.length === 0) {
-                    // Leaf nodes keep their original status
-                    return;
-                }
+// Render radial cluster
+function renderRadialCluster(width, height) {
+    const container = d3.select('#radial-cluster-view');
+    const size = Math.min(width, height);
+    const radius = size / 2 - 50;
 
-                const childStatuses = children.map(c => c.data.status || 'todo');
+    const svg = container.append('svg')
+        .attr('width', size)
+        .attr('height', size);
 
-                if (childStatuses.every(s => s === 'todo')) {
-                    d.data.status = 'todo';
-                } else if (childStatuses.every(s => s === 'done')) {
-                    d.data.status = 'done';
-                } else {
-                    d.data.status = 'processing';
-                }
-            });
-            return node.data.status;
-        }
+    const g = svg.append('g')
+        .attr('transform', `translate(${size / 2},${size / 2})`);
 
-        window.toggleSidebar = function () {
-            const sidebar = document.getElementById('sidebar');
-            const toggle = document.getElementById('sidebar-toggle');
-            const isOpen = sidebar.classList.toggle('open');
-            toggle.textContent = isOpen ? '✕' : '☰';
-            if (isOpen) {
-                toggle.style.left = '340px';
-                toggle.style.borderRadius = '0 6px 6px 0';
-            } else {
-                toggle.style.left = '0';
-            }
-        };
+    // Cluster layout
+    const cluster = d3.cluster()
+        .size([360, radius]);
 
-        // ─── Keyboard Controls for Active Requirement Demo ───
-        let allNodesWithIds = [];
-        let activeNodeIndex = -1;
+    // Convert to hierarchy
+    const root = d3.hierarchy(currentData);
+    cluster(root);
 
-        function collectAllNodes(node) {
-            if (node.data.id) allNodesWithIds.push(node);
-            (node.children || node._children || []).forEach(collectAllNodes);
-        }
+    const color = d3.scaleSequential(d3.interpolateViridis)
+        .domain([0, root.height]);
 
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
+    // Draw links
+    const link = g.append('g')
+        .selectAll('path')
+        .data(root.links())
+        .join('path')
+        .attr('class', 'link')
+        .attr('d', d3.linkRadial()
+            .angle(d => d.x * Math.PI / 180)
+            .radius(d => d.y));
 
-                // Collect nodes on first press
-                if (allNodesWithIds.length === 0 && rootNodeGlobal) {
-                    collectAllNodes(rootNodeGlobal);
-                }
+    // Draw nodes
+    const node = g.append('g')
+        .selectAll('g')
+        .data(root.descendants())
+        .join('g')
+        .attr('transform', d => `rotate(${d.x - 90}) translate(${d.y})`)
+        .on('mouseover', function(event, d) {
+            showTooltip(event, d.data.data);
+        })
+        .on('mouseout', hideTooltip);
 
-                if (allNodesWithIds.length === 0) return;
+    node.append('circle')
+        .attr('r', d => d.depth === 0 ? 5 : 2.5)
+        .attr('fill', d => color(d.depth));
 
-                // Cycle to next node
-                activeNodeIndex = (activeNodeIndex + 1) % allNodesWithIds.length;
-                activeReqId = allNodesWithIds[activeNodeIndex].data.id;
+    node.append('text')
+        .attr('dy', '0.31em')
+        .attr('x', d => d.x < 180 === !d.children ? 6 : -6)
+        .attr('text-anchor', d => d.x < 180 === !d.children ? 'start' : 'end')
+        .attr('transform', d => d.x < 180 ? null : 'rotate(180)')
+        .attr('font-size', d => d.depth === 0 ? '12px' : '8px')
+        .attr('fill', 'currentColor')
+        .text(d => d.data.data.name);
+}
 
-                renderTree();
-                showDetails(allNodesWithIds[activeNodeIndex].data);
+// Tooltip functions
+function showTooltip(event, d) {
+    const tooltip = document.getElementById('tooltip');
+    let content = `<strong>${d.data.name}</strong>`;
+    if (d.data.birthYear) content += `<br/>出生: ${d.data.birthYear}`;
+    if (d.data.deathYear) content += `<br/>去世: ${d.data.deathYear}`;
+    if (d.data.title) content += `<br/>称号: ${d.data.title}`;
 
-                // Show notification
-                const indicator = document.getElementById("poll-status");
-                indicator.textContent = `Active: ${activeReqId.substring(0, 20)}...`;
-                indicator.style.color = "#58a6ff";
-            }
-        });
-    </script>
+    tooltip.innerHTML = content;
+    tooltip.style.opacity = 1;
+    tooltip.style.left = (event.pageX + 10) + 'px';
+    tooltip.style.top = (event.pageY + 10) + 'px';
+}
+
+function hideTooltip() {
+    document.getElementById('tooltip').style.opacity = 0;
+}
+
+// Initialize
+window.addEventListener('resize', () => {
+    if (currentData) {
+        renderTree();
+    }
+});
+</script>
 </body>
-
 </html>

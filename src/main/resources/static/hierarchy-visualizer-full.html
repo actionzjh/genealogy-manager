@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支系层级可视化 - 家谱管理系统</title>
+    <script src="d3.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Theme Toggle Button */
+        #theme-toggle {
+            position: fixed;
+            top: 11px;
+            right: 15px;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #1da0c9;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 0;
+        }
+
+        #theme-toggle:hover {
+            background: #f9fafb;
+        }
+
+        #theme-toggle.active {
+            background: #1a1a2e;
+            border-color: #1da0c9;
+        }
+
+        .toggle-icon {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            color: #1da0c9;
+            transition: all 0.3s;
+        }
+
+        .toggle-icon.icon-sun {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+        }
+
+        .toggle-icon.icon-moon {
+            opacity: 0;
+            transform: rotate(-90deg) scale(0);
+        }
+
+        #theme-toggle.active .toggle-icon.icon-sun {
+            opacity: 0;
+            transform: rotate(90deg) scale(0);
+        }
+
+        #theme-toggle.active .toggle-icon.icon-moon {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+        }
+
+        .toggle-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Light theme variables (default) */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9f9f9;
+            --bg-tertiary: #f0f0f0;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --sidebar-bg: rgba(255, 255, 255, 0.98);
+            --accent-color: #0066cc;
+            --accent-hover: #0052a3;
+            --text-stroke: #ffffff;
+            --link-color: #555555;
+        }
+
+        /* Dark theme using body class */
+        body.dark {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #b0b0b0;
+            --border-color: #2a2a4a;
+            --sidebar-bg: rgba(26, 26, 46, 0.98);
+            --accent-color: #4dabf7;
+            --accent-hover: #339af0;
+            --text-stroke: #1a1a2e;
+            --link-color: #aaaaaa;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            overflow: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #sidebar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 340px;
+            height: 100%;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 400;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out, background 0.3s ease;
+            box-shadow: 10px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #sidebar.open {
+            transform: translateX(0);
+        }
+
+        #sidebar-toggle {
+            position: fixed;
+            left: 0;
+            top: 15px;
+            z-index: 410;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #sidebar-toggle:hover {
+            color: var(--accent-color);
+            background: var(--bg-secondary);
+            padding-left: 15px;
+        }
+
+        #tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        #details p {
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            color: #666666;
+        }
+
+        .stat-val {
+            color: #333333;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+
+        .legend {
+            margin-top: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            font-size: 11px;
+        }
+
+        .legend-line {
+            height: 3px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .param-group {
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .param-group h3 {
+            font-size: 11px;
+            color: #0066cc;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .param-row label {
+            font-size: 11px;
+            color: #666666;
+            width: 95px;
+            flex-shrink: 0;
+        }
+
+        .param-row input[type="range"] {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: var(--border-color);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .param-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height:14px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .param-row .param-val {
+            font-size: 11px;
+            color: #cc6600;
+            width: 40px;
+            text-align: right;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .param-desc {
+            font-size: 10px;
+            color: #555;
+            margin: -2px 0 6px 0;
+            padding-left: 2px;
+        }
+
+        #reset-params {
+            margin-top: 10px;
+            padding: 6px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            width: 100%;
+        }
+
+        #reset-params:hover {
+            background: var(--bg-secondary);
+        }
+
+        #graph {
+            flex: 1;
+            position: relative;
+            background: var(--bg-primary);
+        }
+
+        #tooltip {
+            position: absolute;
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 11px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 100;
+            max-width: 300px;
+            line-height: 1.4;
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #controls {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .button-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        #controls button {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333333;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        #controls button:hover {
+            background: #e0e0e0;
+        }
+
+        /* Branch hover effect */
+        .branch {
+            cursor: pointer;
+            transition: stroke-opacity 0.15s;
+        }
+
+        .branch:hover {
+            stroke-opacity: 1 !important;
+        }
+
+        /* Active Requirement Highlight */
+        .branch-node.active .branch {
+            stroke-width: 4 !important;
+            filter: drop-shadow(0 0 8px #58a6ff);
+        }
+
+        #status-hud {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 11px;
+            width: 100%;
+            justify-content: flex-start;
+            pointer-events: auto;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .hud-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+        }
+
+        .hud-item.active {
+            background: rgba(0, 102, 204, 0.15);
+            color: var(--accent-color);
+        }
+
+        .hud-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .hud-val {
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .hud-item.active .hud-val {
+            color: var(--accent-color);
+        }
+
+        /* View Switcher Dropdown */
+        #view-select {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-right: 8px;
+            outline: none;
+        }
+
+        #view-select:hover {
+            border-color: var(--accent-color);
+        }
+
+        #view-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px var(--accent-color)22;
+        }
+
+        /* Toggle List (Notion Style) */
+        #list-view {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            background: var(--bg-primary);
+            padding: 140px 20px 20px 30px;
+            display: none;
+            color: var(--text-primary);
+        }
+
+        /* Force-directed Tree View */
+        #force-directed-view {
+            width: 100%;
+            height: 100%;
+            display: none;
+            background: var(--bg-primary);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Radial Cluster View */
+        #radial-cluster-view {
+            width: 100%;
+            height: 100%;
+            display: none;
+            background: var(--bg-primary);
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+        }
+
+        #radial-cluster-view svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        #radial-cluster-view .node circle {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #radial-cluster-view .node circle:hover {
+            opacity: 0.7;
+        }
+
+        #radial-cluster-view .node text {
+            cursor: pointer;
+            pointer-events: none;
+        }
+
+        #radial-cluster-view .link {
+            fill: none;
+            stroke: var(--link-color);
+            stroke-opacity: 0.4;
+            stroke-width: 1.5px;
+        }
+
+        .toggle-item {
+            margin: 1px 0;
+            list-style: none;
+        }
+
+        .toggle-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: background 0.1s;
+        }
+
+        .toggle-summary:hover {
+            background: var(--bg-secondary);
+        }
+
+        .toggle-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .toggle-title {
+            font-weight: 400;
+        }
+
+        .toggle-content {
+            padding-left: 12px;
+            border-left: 1px solid #d0d0d0;
+            margin-left: 6px;
+        }
+
+        details>summary {
+            list-style: none;
+        }
+
+        details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .toggle-arrow {
+            font-size: 10px;
+            transition: transform 0.2s;
+            color: #666666;
+        }
+
+        details[open]>summary .toggle-arrow {
+            transform: rotate(90deg);
+        }
+
+        /* Genealogy Selector */
+        .selector-group {
+            margin-bottom: 16px;
+        }
+
+        .selector-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .selector-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .selector-group button {
+            width: 100%;
+            padding: 8px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .selector-group button:hover {
+            background: var(--accent-hover);
+        }
+
+        .person-info {
+            background: var(--bg-secondary);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .person-info h4 {
+            font-size: 12px;
+            color: var(--accent-color);
+            margin-bottom: 6px;
+        }
+
+        .person-info p {
+            font-size: 11px;
+            margin: 2px 0;
+        }
+
+        .generation-stats {
+            margin-top: 10px;
+        }
+
+        .generation-stats .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" aria-label="Toggle theme">
+        <div class="toggle-icon icon-sun">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2"></path>
+                <path d="M12 20v2"></path>
+                <path d="m4.93 4.93 1.41 1.41"></path>
+                <path d="m17.66 17.66 1.41 1.41"></path>
+                <path d="M2 12h2"></path>
+                <path d="M20 12h2"></path>
+                <path d="m6.34 17.66-1.41 1.41"></path>
+                <path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+        </div>
+        <div class="toggle-icon icon-moon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+        </div>
+    </button>
+
+    <div id="container">
+        <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <div id="sidebar">
+            <div id="tab-bar">
+                <button class="tab-btn active" onclick="showTab('select')">📁 选择家谱</button>
+                <button class="tab-btn" onclick="showTab('params')">⚙️ 参数</button>
+                <button class="tab-btn" onclick="showTab('info')">📋 详情</button>
+            </div>
+
+            <div id="tab-select" class="tab-content active">
+                <div class="selector-group">
+                    <label>选择家谱：</label>
+                    <select id="genealogy-select">
+                        <option value="">-- 请选择 --</option>
+                    </select>
+                    <button onclick="loadGenealogyData()">加载数据</button>
+                </div>
+
+                <div class="selector-group">
+                    <label>起始人物：</label>
+                    <select id="root-person-select">
+                        <option value="">-- 先选择家谱 --</option>
+                    </select>
+                </div>
+
+                <div id="current-info" class="person-info" style="display:none;">
+                    <h4>当前信息</h4>
+                    <p><strong>家谱：</strong> <span id="current-genealogy-name">-</span></p>
+                    <p><strong>始祖：</strong> <span id="current-root-name">-</span></p>
+                    <p><strong>总人数：</strong> <span id="total-people">-</span></p>
+                </div>
+
+                <div id="generation-stats" class="generation-stats">
+                </div>
+            </div>
+
+            <div id="tab-params" class="tab-content">
+                <div class="param-group">
+                    <h3>🌿 主干</h3>
+                    <div class="param-row">
+                        <label>间距</label>
+                        <input type="range" id="p-trunkSpacing" min="60" max="500" value="200" step="10">
+                        <span class="param-val" id="v-trunkSpacing">200</span>
+                    </div>
+                    <p class="param-desc">分支附着点之间的垂直间距。</p>
+                    <div class="param-row">
+                        <label>线条粗细</label>
+                        <input type="range" id="p-trunkStroke" min="4" max="30" value="14" step="1">
+                        <span class="param-val" id="v-trunkStroke">14</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <h3>第一级 - 大宗支</h3>
+                    <div class="param-row">
+                        <label>长度</label>
+                        <input type="range" id="p-L1len" min="50" max="500" value="200" step="10">
+                        <span class="param-val" id="v-L1len">200</span>
+                    </div>
+                    <div class="param-row">
+                        <label>角度 (°)</label>
+                        <input type="range" id="p-L1angle" min="10" max="85" value="50" step="1">
+                        <span class="param-val" id="v-L1angle">50</span>
+                    </div>
+                    <p class="param-desc">与垂直线的夹角。0° = 向上，90° = 水平。</p>
+                    <div class="param-row">
+                        <label>线条粗细</label>
+                        <input type="range" id="p-L1stroke" min="2" max="20" value="8" step="0.5">
+                        <span class="param-val" id="v-L1stroke">8</span>
+                    </div>
+                    <div class="param-row">
+                        <label>分支起点</label>
+                        <input type="range" id="p-L1start" min="0" max="0.5" value="0.2" step="0.05">
+                        <span class="param-val" id="v-L1start">0.2</span>
+                    </div>
+                    <div class="param-row">
+                        <label>分支终点</label>
+                        <input type="range" id="p-L1end" min="0.5" max="1" value="0.9" step="0.05">
+                        <span class="param-val" id="v-L1end">0.9</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <h3>第二级 - 小宗支</h3>
+                    <div class="param-row">
+                        <label>长度</label>
+                        <input type="range" id="p-L2len" min="20" max="300" value="110" step="5">
+                        <span class="param-val" id="v-L2len">110</span>
+                    </div>
+                    <div class="param-row">
+                        <label>角度 (°)</label>
+                        <input type="range" id="p-L2angle" min="10" max="120" value="45" step="1">
+                        <span class="param-val" id="v-L2angle">45</span>
+                    </div>
+                    <p class="param-desc">相对于父分支的角度。</p>
+                    <div class="param-row">
+                        <label>线条粗细</label>
+                        <input type="range" id="p-L2stroke" min="1" max="12" value="4" step="0.5">
+                        <span class="param-val" id="v-L2stroke">4</span>
+                    </div>
+                    <div class="param-row">
+                        <label>分支起点</label>
+                        <input type="range" id="p-L2start" min="0" max="0.5" value="0.3" step="0.05">
+                        <span class="param-val" id="v-L2start">0.3</span>
+                    </div>
+                    <div class="param-row">
+                        <label>分支终点</label>
+                        <input type="range" id="p-L2end" min="0.5" max="1" value="0.95" step="0.05">
+                        <span class="param-val" id="v-L2end">0.95</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <h3>第三级 - 房支</h3>
+                    <div class="param-row">
+                        <label>长度</label>
+                        <input type="range" id="p-L3len" min="10" max="200" value="55" step="5">
+                        <span class="param-val" id="v-L3len">55</span>
+                    </div>
+                    <div class="param-row">
+                        <label>角度 (°)</label>
+                        <input type="range" id="p-L3angle" min="10" max="120" value="40" step="1">
+                        <span class="param-val" id="v-L3angle">40</span>
+                    </div>
+                    <div class="param-row">
+                        <label>线条粗细</label>
+                        <input type="range" id="p-L3stroke" min="0.5" max="6" value="2" step="0.5">
+                        <span class="param-val" id="v-L3stroke">2</span>
+                    </div>
+                    <div class="param-row">
+                        <label>分支起点</label>
+                        <input type="range" id="p-L3start" min="0" max="0.5" value="0.3" step="0.05">
+                        <span class="param-val" id="v-L3start">0.3</span>
+                    </div>
+                    <div class="param-row">
+                        <label>分支终点</label>
+                        <input type="range" id="p-L3end" min="0.5" max="1" value="0.95" step="0.05">
+                        <span class="param-val" id="v-L3end">0.95</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <h3>第四级+ - 后裔</h3>
+                    <div class="param-row">
+                        <label>长度</label>
+                        <input type="range" id="p-L4len" min="5" max="120" value="28" step="2">
+                        <span class="param-val" id="v-L4len">28</span>
+                    </div>
+                    <div class="param-row">
+                        <label>角度 (°)</label>
+                        <input type="range" id="p-L4angle" min="10" max="120" value="35" step="1">
+                        <span class="param-val" id="v-L4angle">35</span>
+                    </div>
+                    <div class="param-row">
+                        <label>线条粗细</label>
+                        <input type="range" id="p-L4stroke" min="0.2" max="4" value="0.8" step="0.2">
+                        <span class="param-val" id="v-L4stroke">0.8</span>
+                    </div>
+                    <div class="param-row">
+                        <label>深度收缩</label>
+                        <input type="range" id="p-depthShrink" min="0.3" max="0.95" value="0.6" step="0.05">
+                        <span class="param-val" id="v-depthShrink">0.6</span>
+                    </div>
+                    <p class="param-desc">超过4级后每级长度乘以这个系数。</p>
+                </div>
+
+                <div class="param-group">
+                    <h3>📐 布局</h3>
+                    <div class="param-row">
+                        <label>小枝间距</label>
+                        <input type="range" id="p-twigSpacing" min="5" max="100" value="25" step="1">
+                        <span class="param-val" id="v-twigSpacing">25</span>
+                    </div>
+                    <div class="param-row">
+                        <label>最小分枝角度</label>
+                        <input type="range" id="p-minSproutAngle" min="5" max="60" value="25" step="1">
+                        <span class="param-val" id="v-minSproutAngle">25</span>
+                    </div>
+                    <div class="param-row">
+                        <label>随机抖动</label>
+                        <input type="range" id="p-jitter" min="0" max="60" value="18" step="1">
+                        <span class="param-val" id="v-jitter">18</span>
+                    </div>
+                    <p class="param-desc">大宗分支的随机垂直偏移。</p>
+                    <div class="param-row">
+                        <label>默认折叠深度</label>
+                        <input type="range" id="p-collapseDepth" min="1" max="6" value="3" step="1">
+                        <span class="param-val" id="v-collapseDepth">3</span>
+                    </div>
+                </div>
+
+                <button id="reset-params" onclick="resetParams()">↺ 恢复默认设置</button>
+            </div>
+
+            <div id="tab-info" class="tab-content">
+                <div id="details">
+                    <p><strong>家谱支系层级可视化</strong></p>
+                    <p>将家谱世系以树形分支的形式直观展示，支持多种可视化模式：</p>
+                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 12px; color: #666;">
+                        <li>🌳 分形树状图 - 像大树一样展示宗族分支</li>
+                        <li>📋 Notion 风格可折叠列表 - 文字层级浏览</li>
+                        <li>🔗 力导向关系图 - 交互式拖拽布局</li>
+                        <li>🌟 辐射簇状图 - 环形辐射展示</li>
+                    </ul>
+                    <p style="margin-top: 10px;"><strong>使用说明：</strong></p>
+                    <ol style="margin: 10px 0; padding-left: 20px; font-size: 12px
